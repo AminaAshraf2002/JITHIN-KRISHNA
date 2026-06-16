@@ -541,7 +541,7 @@ export default function App() {
 
           <div className="relative hero-image hidden lg:block">
             <div className="image-frame w-[400px] h-[550px] ml-auto">
-              <img src="img.png" alt="Jithin Krishnan" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" />
+              <img src="/img.png" alt="Jithin Krishnan" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" />
               
               <div className="absolute -bottom-10 -left-10 bg-[#111] border border-white/10 p-5 rounded-sm flex items-center gap-4 shadow-2xl animate-[pulse_3s_ease-in-out_infinite]">
                 <span className="text-accentSec text-2xl"><i className="fa-solid fa-star"></i></span>
