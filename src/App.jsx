@@ -826,50 +826,90 @@ export default function App() {
                 </h3>
                 
                 <div className="space-y-6">
-                  {/* Skill */}
+                  {/* Graphic Design */}
                   <div className="about-skill-item">
                     <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
-                      <span><i className="fa-solid fa-bezier-curve text-accent mr-2"></i>Logo Design</span>
+                      <span><i className="fa-solid fa-palette text-accent mr-2"></i>Graphic Design</span>
+                      <span className="text-accent">98%</span>
+                    </div>
+                    <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="98%"></div></div>
+                  </div>
+                  {/* Video Editing */}
+                  <div className="about-skill-item">
+                    <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
+                      <span><i className="fa-solid fa-video text-accent mr-2"></i>Video Editing</span>
                       <span className="text-accent">95%</span>
                     </div>
                     <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="95%"></div></div>
                   </div>
-                  {/* Skill */}
+                  {/* Social Media Poster Design */}
                   <div className="about-skill-item">
                     <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
-                      <span><i className="fa-solid fa-fingerprint text-accent mr-2"></i>Branding</span>
+                      <span><i className="fa-solid fa-image text-accent mr-2"></i>Social Media Poster Design</span>
+                      <span className="text-accent">93%</span>
+                    </div>
+                    <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="93%"></div></div>
+                  </div>
+                  {/* LOGO design */}
+                  <div className="about-skill-item">
+                    <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
+                      <span><i className="fa-solid fa-bezier-curve text-accent mr-2"></i>LOGO design</span>
+                      <span className="text-accent">91%</span>
+                    </div>
+                    <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="91%"></div></div>
+                  </div>
+                  {/* branding */}
+                  <div className="about-skill-item">
+                    <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
+                      <span><i className="fa-solid fa-fingerprint text-accent mr-2"></i>branding</span>
                       <span className="text-accent">90%</span>
                     </div>
                     <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="90%"></div></div>
                   </div>
-                  {/* Skill */}
+                  {/* Hoarding Design */}
                   <div className="about-skill-item">
                     <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
-                      <span><i className="fa-solid fa-film text-accent mr-2"></i>Video Editing</span>
+                      <span><i className="fa-solid fa-ad text-accent mr-2"></i>Hoarding Design</span>
                       <span className="text-accent">88%</span>
                     </div>
                     <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="88%"></div></div>
                   </div>
-                  {/* Skill */}
+                  {/* Brochure Design */}
                   <div className="about-skill-item">
                     <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
-                      <span><i className="fa-solid fa-image text-accent mr-2"></i>Brochures & Hoarding Design</span>
+                      <span><i className="fa-solid fa-book-open text-accent mr-2"></i>Brochure Design</span>
                       <span className="text-accent">87%</span>
                     </div>
                     <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="87%"></div></div>
                   </div>
-                  {/* Skill */}
+                  {/* App Banner Design */}
                   <div className="about-skill-item">
                     <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
-                      <span><i className="fa-solid fa-hashtag text-accent mr-2"></i>Social Media Creatives</span>
+                      <span><i className="fa-solid fa-flag text-accent mr-2"></i>App Banner Design</span>
+                      <span className="text-accent">86%</span>
+                    </div>
+                    <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="86%"></div></div>
+                  </div>
+                  {/* Branding & Visual Identity */}
+                  <div className="about-skill-item">
+                    <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
+                      <span><i className="fa-solid fa-signature text-accent mr-2"></i>Branding & Visual Identity</span>
                       <span className="text-accent">85%</span>
                     </div>
                     <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="85%"></div></div>
                   </div>
-                  {/* Skill */}
+                  {/* Print & Digital Advertising */}
                   <div className="about-skill-item">
                     <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
-                      <span><i className="fa-solid fa-bullhorn text-accent mr-2"></i>Ad Creatives</span>
+                      <span><i className="fa-solid fa-bullhorn text-accent mr-2"></i>Print & Digital Advertising</span>
+                      <span className="text-accent">83%</span>
+                    </div>
+                    <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="83%"></div></div>
+                  </div>
+                  {/* Creative Concept Development */}
+                  <div className="about-skill-item">
+                    <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
+                      <span><i className="fa-solid fa-lightbulb text-accent mr-2"></i>Creative Concept Development</span>
                       <span className="text-accent">80%</span>
                     </div>
                     <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="80%"></div></div>
