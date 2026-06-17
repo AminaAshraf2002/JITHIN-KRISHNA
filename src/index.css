@@ -253,16 +253,22 @@ nav {
     background: #111;
 }
 
-.portfolio-card img {
+.portfolio-card img,
+.portfolio-card video,
+.portfolio-card iframe {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+    transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), filter 0.6s ease;
+    filter: grayscale(100%);
     opacity: 0.8;
 }
 
-.portfolio-card:hover img {
+.portfolio-card:hover img,
+.portfolio-card:hover video,
+.portfolio-card:hover iframe {
     transform: scale(1.05);
+    filter: grayscale(0%);
     opacity: 1;
 }
 
@@ -319,21 +325,20 @@ nav {
 }
 
 .award-card {
-    background: rgba(255, 255, 255, 0.01);
+    background: rgba(255, 255, 255, 0.02);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.06);
     position: relative;
     overflow: hidden;
-    transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .award-card:hover {
-    background: rgba(255, 255, 255, 0.03);
-    border-color: rgba(255, 60, 0, 0.2);
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 214, 10, 0.3);
     transform: translateY(-4px);
-    box-shadow: 0 30px 60px -15px rgba(255, 60, 0, 0.1), 
-                inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
 }
 
 .floating-icon {
@@ -377,7 +382,7 @@ nav {
         padding: 1.5rem !important;
     }
     .marquee-content {
-        font-size: 1.8rem;
+        font-size: 1.3rem;
     }
     .portfolio-card {
         height: 280px;
@@ -403,7 +408,7 @@ nav {
         padding: 2rem !important;
     }
     .marquee-content {
-        font-size: 2.2rem;
+        font-size: 1.6rem;
     }
 }
 
@@ -467,4 +472,185 @@ nav {
     .max-w-4xl {
         max-width: 1100px;
     }
+}
+
+/* --- Gallery Marquee Style --- */
+.gallery-marquee-wrapper {
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  height: 600px; /* Fixed height for the viewport */
+  margin-top: 2rem;
+}
+
+.gallery-marquee-content {
+  display: flex;
+  gap: 1.5rem;
+  animation: galleryMarqueeScroll 53s linear infinite;
+  will-change: transform;
+  height: 100%;
+  width: max-content;
+}
+
+/* Column wrapper for 2 short cards stacked vertically */
+.gallery-marquee-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  flex-shrink: 0;
+  height: 100%;
+  justify-content: center;
+}
+
+/* VERY SMOOTH Animation - FAST CONTINUOUS SPEED */
+@keyframes galleryMarqueeScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Marquee Items - Base Styles */
+.gallery-marquee-item {
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  transition: transform 0.4s ease, box-shadow 0.4s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+  background: #111;
+}
+
+/* Tall items - Full height (vertical) */
+.gallery-marquee-item.tall {
+  width: 300px;
+  height: 100%;
+  align-self: stretch;
+}
+
+/* Short items - Half height (2 cards stack vertically) */
+.gallery-marquee-item.short {
+  width: 300px;
+  height: calc((100% - 1.5rem) / 2);
+}
+
+.gallery-marquee-item:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(255, 60, 0, 0.25);
+  z-index: 10;
+}
+
+.gallery-marquee-item img,
+.gallery-marquee-item video,
+.gallery-marquee-item iframe {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+  filter: grayscale(0%);
+  opacity: 1;
+}
+
+.gallery-marquee-item:hover img,
+.gallery-marquee-item:hover video,
+.gallery-marquee-item:hover iframe {
+  transform: scale(1.05);
+}
+
+/* Slide up red overlay on hover of marquee card */
+.gallery-marquee-item:hover .portfolio-overlay {
+  opacity: 0.95;
+  transform: translateY(0);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .gallery-marquee-wrapper {
+    height: 520px;
+  }
+
+  .gallery-marquee-item.tall,
+  .gallery-marquee-item.short {
+    width: 300px;
+  }
+
+  .gallery-marquee-item.short {
+    height: calc((100% - 1.5rem) / 2);
+  }
+
+  .gallery-marquee-content {
+    animation-duration: 70s;
+  }
+}
+
+@media (max-width: 768px) {
+  .gallery-marquee-wrapper {
+    height: 450px;
+  }
+
+  .gallery-marquee-item.tall,
+  .gallery-marquee-item.short {
+    width: 260px;
+  }
+
+  .gallery-marquee-item.short {
+    height: calc((100% - 1.2rem) / 2);
+  }
+
+  .gallery-marquee-column {
+    gap: 1.2rem;
+  }
+
+  .gallery-marquee-content {
+    gap: 1.2rem;
+    animation-duration: 80s;
+  }
+}
+
+@media (max-width: 480px) {
+  .gallery-marquee-wrapper {
+    height: 380px;
+  }
+
+  .gallery-marquee-item {
+    border-radius: 12px;
+  }
+
+  .gallery-marquee-item.tall,
+  .gallery-marquee-item.short {
+    width: 220px;
+  }
+
+  .gallery-marquee-item.short {
+    height: calc((100% - 1rem) / 2);
+  }
+
+  .gallery-marquee-column {
+    gap: 1rem;
+  }
+
+  .gallery-marquee-content {
+    gap: 1rem;
+    animation-duration: 90s;
+  }
+}
+
+/* Smooth scrolling optimization */
+@media (prefers-reduced-motion: no-preference) {
+  .gallery-marquee-content {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-perspective: 1000;
+    perspective: 1000;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+  }
+}
+
+/* Video specific styles */
+.gallery-marquee-item video {
+  object-position: center;
 }

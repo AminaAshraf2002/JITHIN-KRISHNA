@@ -265,17 +265,20 @@ export default function App() {
 
       // Section Reveals
       gsap.utils.toArray('.section-reveal').forEach(section => {
-        gsap.from(section, {
-          opacity: 0,
-          y: 50,
-          duration: 1,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: section,
-            start: "top 100%",
-            toggleActions: "play none none reverse"
+        gsap.fromTo(section, 
+          { opacity: 0, y: 50 },
+          {
+            opacity: 1,
+            y: 0,
+            duration: 1,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: section,
+              start: "top 100%",
+              toggleActions: "play none none reverse"
+            }
           }
-        });
+        );
       });
 
       // Skill Bars Animate on Scroll
@@ -302,15 +305,27 @@ export default function App() {
       aboutTl.from(".about-fade-up", { y: 30, opacity: 0, duration: 0.6, stagger: 0.1, ease: "power3.out" })
              .from(".about-title-line", { yPercent: 100, duration: 0.8, stagger: 0.1, ease: "power4.out" }, "-=0.4")
              .from(".about-para", { y: 20, opacity: 0, duration: 0.6, stagger: 0.1, ease: "power3.out" }, "-=0.4")
-             .from(".award-card", { scale: 0.8, opacity: 0, rotationX: 15, duration: 0.8, ease: "back.out(1.7)" }, "-=0.2")
-             .from(".about-skill-item", { x: 30, opacity: 0, duration: 0.6, stagger: 0.05, ease: "power3.out" }, "-=0.6")
+             .from(".about-skill-item", { x: 30, opacity: 0, duration: 0.6, stagger: 0.05, ease: "power3.out" }, "-=0.4")
              .from(".about-tool-tag", { scale: 0.5, opacity: 0, duration: 0.5, stagger: 0.05, ease: "back.out(2)" }, "-=0.4");
 
-      // Experience Timeline
+      // Animate award card independently to prevent blocking issues
+      gsap.from(".award-card", {
+        scale: 0.8,
+        opacity: 0,
+        rotationX: 15,
+        duration: 0.8,
+        ease: "back.out(1.7)",
+        scrollTrigger: {
+          trigger: ".award-card",
+          start: "top 90%"
+        }
+      });
+
+      // Experience Timeline Animations
       gsap.to(".exp-title", {
-        y: 0, 
-        opacity: 1, 
-        duration: 0.8, 
+        y: 0,
+        opacity: 1,
+        duration: 0.8,
         ease: "power3.out",
         scrollTrigger: {
           trigger: "#experience",
@@ -329,78 +344,52 @@ export default function App() {
         }
       });
 
-      gsap.utils.toArray(".exp-item").forEach(item => {
+      gsap.utils.toArray(".exp-item").forEach((item) => {
         gsap.to(item, {
           y: 0,
           opacity: 1,
-          duration: 0.6,
-          ease: "back.out(1.5)",
+          duration: 0.8,
+          ease: "power3.out",
           scrollTrigger: {
             trigger: item,
-            start: "top 75%"
+            start: "top 85%"
           }
         });
       });
 
-      // Certifications
-      const certTl = gsap.timeline({
+      // Credentials Timeline Animations
+      gsap.to(".cert-title", {
+        y: 0,
+        opacity: 1,
+        duration: 0.8,
+        ease: "power3.out",
         scrollTrigger: {
           trigger: ".cert-title",
-          start: "top 100%",
+          start: "top 80%"
         }
       });
-      certTl.to(".cert-title", { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" })
-            .to(".cert-item", { y: 0, opacity: 1, duration: 0.6, stagger: 0.15, ease: "power3.out" }, "-=0.4");
 
+      gsap.utils.toArray(".cert-item").forEach((item) => {
+        gsap.to(item, {
+          y: 0,
+          opacity: 1,
+          duration: 0.8,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: item,
+            start: "top 85%"
+          }
+        });
+      });
+
+      // Refresh ScrollTrigger after a short delay for React rendering layout shifts
+      setTimeout(() => {
+        ScrollTrigger.refresh();
+      }, 500);
     });
-
     return () => ctx.revert();
   }, [works]);
 
-  // Handle local file selection to base64 conversion
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setAdminFileData(reader.result);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // Handle Passcode verification
-  const handlePasscodeSubmit = (e) => {
-    e.preventDefault();
-    const correctPasscodes = ['jithin', 'jithin2026', 'amina'];
-    if (correctPasscodes.includes(passcodeInput.toLowerCase().trim())) {
-      setIsAuthenticated(true);
-      setPasscodeError(false);
-      localStorage.setItem('jithin_admin_authed', 'true');
-    } else {
-      setPasscodeError(true);
-    }
-  };
-
-  // Sign out / Lock panel
-  const handleAdminLock = () => {
-    setIsAuthenticated(false);
-    localStorage.removeItem('jithin_admin_authed');
-    setPasscodeInput('');
-  };
-
-  // Handle Edit selection
-  const handleEditSelect = (work) => {
-    setEditingId(work._id);
-    setAdminTitle(work.title);
-    setAdminCategory(work.category);
-    setAdminType(work.type);
-    setAdminFileUrl(work.fileUrl || '');
-    setAdminFileData(work.fileData || '');
-    setAdminDescription(work.description || '');
-  };
-
-  // Cancel editing mode
   const handleCancelEdit = () => {
     setEditingId(null);
     setAdminTitle('');
@@ -411,11 +400,66 @@ export default function App() {
     setAdminDescription('');
   };
 
-  // Handle Add/Edit Work form submission
+  const handleEditSelect = (work) => {
+    setEditingId(work._id);
+    setAdminTitle(work.title);
+    setAdminCategory(work.category);
+    setAdminType(work.type);
+    setAdminFileUrl(work.fileUrl || '');
+    setAdminFileData(work.fileData || '');
+    setAdminDescription(work.description || '');
+  };
+
+  const handleDeleteWork = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this work?')) return;
+    try {
+      const res = await fetch(`${API_BASE}/api/works/${id}`, {
+        method: 'DELETE'
+      });
+      if (res.ok) {
+        alert('Work deleted successfully!');
+        fetchWorks();
+      } else {
+        alert('Failed to delete work.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error deleting work.');
+    }
+  };
+
+  const handlePasscodeSubmit = (e) => {
+    e.preventDefault();
+    if (passcodeInput === '1000' || passcodeInput === 'admin' || passcodeInput === 'jithin1000') {
+      setIsAuthenticated(true);
+      localStorage.setItem('jithin_admin_authed', 'true');
+      setPasscodeError(false);
+      setPasscodeInput('');
+    } else {
+      setPasscodeError(true);
+    }
+  };
+
+  const handleAdminLock = () => {
+    setIsAuthenticated(false);
+    localStorage.removeItem('jithin_admin_authed');
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAdminFileData(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleAddWork = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-
+    
     const payload = {
       title: adminTitle,
       category: adminCategory,
@@ -426,52 +470,193 @@ export default function App() {
     };
 
     try {
-      const url = editingId ? `${API_BASE}/api/works/${editingId}` : `${API_BASE}/api/works`;
-      const method = editingId ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method: method,
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
+      let res;
+      if (editingId) {
+        res = await fetch(`${API_BASE}/api/works/${editingId}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } else {
+        res = await fetch(`${API_BASE}/api/works`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
 
       if (res.ok) {
-        // Reset states
+        alert(editingId ? 'Project updated successfully!' : 'Project published successfully!');
         handleCancelEdit();
         setIsAdminOpen(false);
         fetchWorks();
       } else {
-        const error = await res.json();
-        alert('Failed to publish work: ' + error.message);
+        alert('Failed to save project.');
       }
     } catch (err) {
       console.error(err);
-      alert('Error saving work.');
+      alert('Error saving project.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Delete work item
-  const handleDeleteWork = async (id) => {
-    if (!confirm('Are you sure you want to delete this work?')) return;
-    try {
-      const res = await fetch(`${API_BASE}/api/works/${id}`, {
-        method: 'DELETE'
-      });
-      if (res.ok) {
-        if (editingId === id) {
-          handleCancelEdit();
-        }
-        fetchWorks();
-      } else {
-        alert('Failed to delete work.');
+  const renderWorkMedia = (work) => {
+    const src = work.fileData || work.fileUrl;
+    if (work.type === 'video') {
+      if (src && (src.includes('youtube.com') || src.includes('youtu.be') || src.includes('vimeo'))) {
+        return (
+          <iframe
+            src={src}
+            className="w-full h-full object-cover"
+            title={work.title}
+            allowFullScreen
+          />
+        );
       }
-    } catch (err) {
-      console.error(err);
+      return (
+        <video
+          src={src}
+          className="w-full h-full object-cover"
+          autoPlay
+          loop
+          muted
+          playsInline
+        />
+      );
     }
+    return (
+      <img
+        src={src}
+        alt={work.title}
+        className="w-full h-full object-cover"
+      />
+    );
+  };
+  const renderWorkItem = (work, isShort) => {
+    return (
+      <div 
+        key={work._id} 
+        className={`gallery-marquee-item ${isShort ? 'short' : 'tall'} hoverable cursor-pointer`}
+        onClick={() => setLightboxItem(work)}
+      >
+        {renderWorkMedia(work)}
+        <div className="portfolio-overlay">
+          <div className="text-white/85 text-xs font-bold uppercase tracking-widest mb-2">{work.category}</div>
+          <h3 className="font-bebas text-4xl tracking-widest">{work.title}</h3>
+        </div>
+      </div>
+    );
+  };
+
+  const buildMarqueeLayout = (filteredItems) => {
+    if (filteredItems.length === 0) {
+      return (
+        <div className="text-center py-20 text-gray-500 uppercase tracking-widest text-sm font-medium">
+          No works found in this category.
+        </div>
+      );
+    }
+
+    // Duplicate list to make sure we have enough items for seamless scrolling marquee
+    let items = [...filteredItems];
+    while (items.length < 12) {
+      items = [...items, ...filteredItems];
+    }
+
+    const structure = [];
+    let i = 0;
+    while (i < items.length) {
+      if (structure.length % 2 === 0) {
+        structure.push({ type: 'tall', media: items[i] });
+        i += 1;
+      } else {
+        if (i + 1 < items.length) {
+          structure.push({
+            type: 'column',
+            items: [items[i], items[i + 1]]
+          });
+          i += 2;
+        } else {
+          structure.push({ type: 'tall', media: items[i] });
+          i += 1;
+        }
+      }
+    }
+
+    const renderStructure = (structList, keyPrefix) => {
+      return structList.map((item, index) => {
+        if (item.type === 'tall') {
+          return (
+            <React.Fragment key={`${keyPrefix}-tall-${index}`}>
+              {renderWorkItem(item.media, false)}
+            </React.Fragment>
+          );
+        } else if (item.type === 'column') {
+          return (
+            <div key={`${keyPrefix}-col-${index}`} className="gallery-marquee-column">
+              {renderWorkItem(item.items[0], true)}
+              {renderWorkItem(item.items[1], true)}
+            </div>
+          );
+        }
+        return null;
+      });
+    };
+
+    return (
+      <div className="gallery-marquee-wrapper">
+        <div className="gallery-marquee-content">
+          {renderStructure(structure, 'set1')}
+          {renderStructure(structure, 'set2')}
+        </div>
+      </div>
+    );
+  };
+
+  const matchesCategory = (work, selectedCat) => {
+    if (selectedCat === 'ALL') return true;
+    const cat = work.category.toUpperCase();
+    const sel = selectedCat.toUpperCase();
+    
+    if (sel === 'POSTERS') {
+      return cat.includes('POSTER') || cat.includes('POSTERS');
+    }
+    if (sel === 'HORDINGS') {
+      return cat.includes('HORDING') || cat.includes('HORDINGS');
+    }
+    if (sel === 'LOGO DESIGN') {
+      return cat.includes('LOGO');
+    }
+    return cat === sel;
+  };
+
+  const renderNormalGrid = (filteredItems) => {
+    if (filteredItems.length === 0) {
+      return (
+        <div className="text-center py-20 text-gray-500 uppercase tracking-widest text-sm font-medium">
+          No works found in this category.
+        </div>
+      );
+    }
+
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredItems.map(work => (
+          <div 
+            key={work._id}
+            onClick={() => setLightboxItem(work)}
+            className="portfolio-card hoverable cursor-pointer h-[340px]"
+          >
+            {renderWorkMedia(work)}
+            <div className="portfolio-overlay">
+              <div className="text-white/85 text-xs font-bold uppercase tracking-widest mb-2">{work.category}</div>
+              <h3 className="font-bebas text-4xl tracking-widest">{work.title}</h3>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -546,9 +731,9 @@ export default function App() {
             </h1>
             
             <div className="space-y-4 max-w-lg">
-              <h2 className="text-xl md:text-2xl font-light text-gray-300">Graphic Designer · Video Editor · Visual Storyteller</h2>
+              <h2 className="text-xl md:text-2xl font-light text-gray-300">Graphic Designer · Video Editor</h2>
               <p className="text-gray-400 leading-relaxed font-light">
-                I craft bold, cinematic designs and engaging motion pieces for forward-thinking brands. Based in Palakkad, Kerala, bringing stories to life through pixels and keyframes.
+                Creative and detail-oriented Graphic Designer with 1+ year of professional experience. Based in Palakkad, Kerala, specializing in social media creatives, brochures, branding materials, and promotional video editing.
               </p>
             </div>
             
@@ -589,30 +774,28 @@ export default function App() {
 
       {/* Marquee */}
       <div className="marquee-wrapper border-y border-white/5 opacity-0 section-reveal">
-        <div className="marquee-content font-bebas text-3xl md:text-5xl tracking-widest text-gray-500">
+        <div className="marquee-content font-bebas text-xl md:text-3xl tracking-widest text-gray-500">
           Social Media Design <span className="diamond">◆</span> 
           Branding & Identity <span class="diamond">◆</span> 
           Video Editing <span className="diamond">◆</span> 
           Hoarding Designs <span className="diamond">◆</span> 
           App Banners <span className="diamond">◆</span> 
           Brochures <span className="diamond">◆</span> 
-          Motion Graphics <span className="diamond">◆</span> 
           Social Media Design <span className="diamond">◆</span> 
           Branding & Identity <span className="diamond">◆</span> 
           Video Editing <span className="diamond">◆</span> 
           Hoarding Designs <span className="diamond">◆</span> 
           App Banners <span className="diamond">◆</span> 
           Brochures <span className="diamond">◆</span> 
-          Motion Graphics <span className="diamond">◆</span> 
         </div>
       </div>
 
       {/* About Section */}
-      <section id="about" className="py-40 px-6 relative">
+      <section id="about" className="pt-40 pb-20 px-6 relative">
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-accent/5 to-transparent pointer-events-none -z-10"></div>
         <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-accentSec/10 rounded-full blur-[120px] pointer-events-none -z-10"></div>
 
-        <div className="max-w-7xl mx-auto glass-panel rounded-3xl p-10 md:p-24 relative overflow-hidden">
+        <div className="max-w-7xl mx-auto glass-panel rounded-3xl p-10 md:pt-24 md:px-24 md:pb-16 relative overflow-hidden">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 relative z-10">
             {/* Left Column */}
             <div className="space-y-10">
@@ -626,60 +809,12 @@ export default function App() {
               </h2>
               
               <div className="space-y-6 text-gray-400 font-light leading-relaxed text-lg">
-                <p className="about-para"><i className="fa-solid fa-quote-left text-accentSec/30 text-2xl mr-3"></i>I started my journey with a deep curiosity for how visuals communicate emotions. Today, I am a dedicated Graphic Designer and Video Editor blending aesthetic appeal with strategic intent.</p>
-                <p className="about-para">Over the past year, I have honed my skills across various disciplines—from print media to dynamic motion graphics—ensuring every project not only looks premium but also performs exceptionally.</p>
-                <p className="about-para">Currently shaping brand narratives and creating high-impact campaigns in Kerala's thriving tech landscape.</p>
+                <p className="about-para"><i className="fa-solid fa-quote-left text-accentSec/30 text-2xl mr-3"></i>Creative and detail-oriented Graphic Designer with 1+ year of professional experience in digital marketing and visual content creation. Currently working at <strong>Inspite Technologies, Infopark Kochi</strong>, specializing in social media creatives, brochures, hoarding designs, app banners, branding materials, and promotional video editing.</p>
+                <p className="about-para">Skilled in creating modern, visually engaging, and marketing-focused designs that improve audience engagement and brand visibility. Proficient in Adobe Photoshop, Illustrator, InDesign, Premiere Pro, and Canva with strong expertise in digital advertising, layout design, and visual communication.</p>
+                <p className="about-para">Experienced in managing multiple creative projects within deadline-driven environments while maintaining high-quality design standards and client satisfaction. Also actively working as a freelance Graphic Designer and Video Editor for brands, startups, and businesses.</p>
               </div>
 
-              {/* Award Card */}
-              <div className="award-card rounded-2xl p-6 md:p-8 mt-12 hoverable group cursor-default">
-                {/* Decorative subtle gradient radial glow inside card */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-accentSec/5 rounded-full blur-3xl pointer-events-none -z-10"></div>
-                
-                <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 relative z-10">
-                  <div className="w-14 h-14 rounded-xl bg-accentSec/10 border border-accentSec/20 flex items-center justify-center shrink-0 floating-icon text-accentSec">
-                    <i className="fa-solid fa-trophy text-2xl"></i>
-                  </div>
-                  
-                  <div className="flex-1 flex flex-col md:flex-row md:items-center justify-between gap-6 w-full text-center sm:text-left">
-                    <div className="max-w-md">
-                      <div className="flex items-center justify-center sm:justify-start gap-2 mb-2">
-                        <span className="text-[10px] font-semibold tracking-widest text-accentSec uppercase bg-accentSec/10 px-3 py-1 rounded-full border border-accentSec/20">Honorable Mention</span>
-                      </div>
-                      <h3 className="font-bebas text-3xl md:text-4xl text-white tracking-widest mb-3 group-hover:text-accentSec transition-colors duration-300">Best Performer Award 2025</h3>
-                      <p className="text-sm text-gray-400 leading-relaxed font-light">
-                        Awarded for outstanding creative contributions and consistent excellence at <span className="text-white font-medium">Inspite Technologies, Infopark Kochi.</span>
-                      </p>
-                    </div>
 
-                    {/* Certificate Framed Preview */}
-                    <div className="flex justify-center shrink-0">
-                      <div 
-                        className="relative w-32 h-44 sm:w-36 sm:h-48 rounded-xl overflow-hidden border border-white/10 hover:border-accentSec/50 transition-all duration-500 shadow-2xl group/img cursor-pointer shrink-0 bg-neutral-900"
-                        onClick={() => setLightboxItem({
-                          title: "Best Performer Award 2025",
-                          category: "AWARDS",
-                          type: "image",
-                          fileUrl: "/award.jpeg",
-                          description: "Awarded for outstanding creative contributions and consistent excellence at Inspite Technologies, Infopark Kochi."
-                        })}
-                      >
-                        <img 
-                          src="/award.jpeg" 
-                          alt="Best Performer Award 2025 certificate" 
-                          className="w-full h-full object-cover filter grayscale group-hover/img:grayscale-0 group-hover/img:scale-110 transition-all duration-700"
-                        />
-                        <div className="absolute inset-0 bg-black/70 opacity-0 group-hover/img:opacity-100 transition-opacity duration-300 flex flex-col items-center justify-center gap-2">
-                          <div className="w-10 h-10 rounded-full bg-accentSec/20 border border-accentSec/50 flex items-center justify-center text-accentSec group-hover/img:scale-110 transition-transform duration-500">
-                            <i className="fa-solid fa-magnifying-glass-plus text-base"></i>
-                          </div>
-                          <span className="text-[10px] tracking-widest text-white uppercase font-bebas">View Full</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
 
             {/* Right Column (Skills & Tools) */}
@@ -694,7 +829,7 @@ export default function App() {
                   {/* Skill */}
                   <div className="about-skill-item">
                     <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
-                      <span><i className="fa-solid fa-hashtag text-accent mr-2"></i>Social Media Design</span>
+                      <span><i className="fa-solid fa-bezier-curve text-accent mr-2"></i>Logo Design</span>
                       <span className="text-accent">95%</span>
                     </div>
                     <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="95%"></div></div>
@@ -718,7 +853,7 @@ export default function App() {
                   {/* Skill */}
                   <div className="about-skill-item">
                     <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
-                      <span><i className="fa-solid fa-font text-accent mr-2"></i>Typography</span>
+                      <span><i className="fa-solid fa-image text-accent mr-2"></i>Brochures & Hoarding Design</span>
                       <span className="text-accent">87%</span>
                     </div>
                     <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="87%"></div></div>
@@ -726,7 +861,7 @@ export default function App() {
                   {/* Skill */}
                   <div className="about-skill-item">
                     <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
-                      <span><i className="fa-solid fa-print text-accent mr-2"></i>Print Design</span>
+                      <span><i className="fa-solid fa-hashtag text-accent mr-2"></i>Social Media Creatives</span>
                       <span className="text-accent">85%</span>
                     </div>
                     <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="85%"></div></div>
@@ -734,7 +869,7 @@ export default function App() {
                   {/* Skill */}
                   <div className="about-skill-item">
                     <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
-                      <span><i className="fa-solid fa-wand-magic-sparkles text-accent mr-2"></i>Motion Graphics</span>
+                      <span><i className="fa-solid fa-bullhorn text-accent mr-2"></i>Ad Creatives</span>
                       <span className="text-accent">80%</span>
                     </div>
                     <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="80%"></div></div>
@@ -752,7 +887,7 @@ export default function App() {
                   <div className="about-tool-tag tool-tag border border-white/10 rounded-lg px-6 py-4 text-sm font-medium uppercase tracking-widest bg-white/5 backdrop-blur-md shadow-lg"><i className="fa-brands fa-adobe mr-2 text-accent"></i>Illustrator</div>
                   <div className="about-tool-tag tool-tag border border-white/10 rounded-lg px-6 py-4 text-sm font-medium uppercase tracking-widest bg-white/5 backdrop-blur-md shadow-lg"><i className="fa-brands fa-adobe mr-2 text-accent"></i>InDesign</div>
                   <div className="about-tool-tag tool-tag border border-white/10 rounded-lg px-6 py-4 text-sm font-medium uppercase tracking-widest bg-white/5 backdrop-blur-md shadow-lg"><i className="fa-solid fa-video mr-2 text-accent"></i>Premiere Pro</div>
-                  <div className="about-tool-tag tool-tag border border-white/10 rounded-lg px-6 py-4 text-sm font-medium uppercase tracking-widest bg-white/5 backdrop-blur-md shadow-lg"><i className="fa-solid fa-film mr-2 text-accent"></i>After Effects</div>
+                  <div className="about-tool-tag tool-tag border border-white/10 rounded-lg px-6 py-4 text-sm font-medium uppercase tracking-widest bg-white/5 backdrop-blur-md shadow-lg"><i className="fa-solid fa-clapperboard mr-2 text-accent"></i>CapCut</div>
                   <div className="about-tool-tag tool-tag border border-white/10 rounded-lg px-6 py-4 text-sm font-medium uppercase tracking-widest bg-white/5 backdrop-blur-md shadow-lg"><i className="fa-solid fa-pen-nib mr-2 text-accent"></i>Canva</div>
                 </div>
               </div>
@@ -794,11 +929,14 @@ export default function App() {
               </div>
               <div className="text-accent text-sm font-bold uppercase tracking-widest mb-2"><i className="fa-solid fa-calendar-days mr-2"></i>April 2025 – Present</div>
               <h3 className="font-bebas text-3xl tracking-widest mb-1">Graphic Designer</h3>
-              <p className="text-gray-400 font-medium mb-4"><i className="fa-solid fa-building mr-2"></i>Inspite Technologies, Infopark Kochi</p>
+              <p className="text-gray-400 font-medium mb-4"><i className="fa-solid fa-building mr-2"></i>Inspite Technologies – Infopark Kochi</p>
               <ul className="space-y-2 text-gray-500 font-light">
-                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Spearheading visual identity design for key tech products.</li>
-                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Creating impactful social media campaigns and marketing collateral.</li>
-                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Editing high-quality promotional video content.</li>
+                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Recognized with the Best Performer Award 2025 for outstanding creative performance and contribution to client projects.</li>
+                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Designed social media posters, digital advertisements, and marketing creatives for multiple clients.</li>
+                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Created brochures, hoarding designs, flyers, app banners, and promotional graphics for digital and print campaigns.</li>
+                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Edited reels, promotional videos, and advertisement content for social media platforms.</li>
+                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Collaborated with marketing teams to develop creative campaign concepts and visual strategies.</li>
+                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Delivered high-quality visual content within deadlines while ensuring client satisfaction.</li>
               </ul>
             </div>
 
@@ -807,12 +945,14 @@ export default function App() {
               <div className="timeline-dot md:left-[-12px] transition-transform duration-300 group-hover:scale-125 flex items-center justify-center">
                 <i className="fa-solid fa-circle-dot text-[8px] text-accent"></i>
               </div>
-              <div className="text-gray-400 text-sm font-bold uppercase tracking-widest mb-2"><i className="fa-solid fa-calendar-days mr-2"></i>2024 (3-Month Internship)</div>
+              <div className="text-gray-400 text-sm font-bold uppercase tracking-widest mb-2"><i className="fa-solid fa-calendar-days mr-2"></i>3-Month Internship</div>
               <h3 className="font-bebas text-3xl tracking-widest mb-1">Graphic Design Intern</h3>
-              <p className="text-gray-400 font-medium mb-4"><i className="fa-solid fa-building mr-2"></i>Zed Soft Tech, Malappuram</p>
+              <p className="text-gray-400 font-medium mb-4"><i className="fa-solid fa-building mr-2"></i>Zed Soft Tech, Malappuram, Tirur</p>
               <ul className="space-y-2 text-gray-500 font-light">
-                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Assisted senior designers in brand asset creation.</li>
-                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Developed foundation in professional workflow and client delivery.</li>
+                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Assisted in creating social media creatives, promotional posters, and marketing materials.</li>
+                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Supported branding and visual design projects for businesses and startups.</li>
+                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Worked on video editing and digital content creation for social media campaigns.</li>
+                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Collaborated with senior designers to execute creative concepts and campaign visuals.</li>
               </ul>
             </div>
 
@@ -822,27 +962,28 @@ export default function App() {
                 <i className="fa-solid fa-circle-dot text-[8px] text-accent"></i>
               </div>
               <div className="text-accent text-sm font-bold uppercase tracking-widest mb-2"><i className="fa-solid fa-calendar-days mr-2"></i>Ongoing</div>
-              <h3 className="font-bebas text-3xl tracking-widest mb-1">Freelance Designer & Editor</h3>
+              <h3 className="font-bebas text-3xl tracking-widest mb-1">Freelance Graphic Designer & Video Editor</h3>
               <p className="text-gray-400 font-medium mb-4"><i className="fa-solid fa-laptop-house mr-2"></i>Independent</p>
               <ul className="space-y-2 text-gray-500 font-light">
-                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Delivering bespoke logo designs and hoarding graphics for local businesses.</li>
-                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Crafting dynamic motion graphics for diverse clientele.</li>
+                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Designed logos, social media creatives, brochures, banners, and promotional materials for various clients.</li>
+                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Created promotional videos, reels, and advertisement content for businesses and digital platforms.</li>
+                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Assisted startups and local brands in developing strong visual identities and creative marketing materials.</li>
+                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Delivered modern and trend-focused design solutions tailored to client requirements.</li>
               </ul>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Portfolio Section */}
-      <section id="work" className="py-32 px-6 bg-[#0f0f0f]">
-        <div className="max-w-7xl mx-auto section-reveal">
+      <section id="work" className="py-32 bg-[#0f0f0f]">
+        <div className="max-w-7xl mx-auto px-6 section-reveal">
           <h2 className="font-bebas text-5xl md:text-6xl tracking-wide mb-8">
             Selected <span className="text-accent">Works</span>
           </h2>
 
           {/* Category Filters */}
           <div className="flex flex-wrap gap-3 mb-12">
-            {['ALL', 'AD CREATIVES', 'VIDEOS', 'BROUCHERS', 'BRANDING', 'HORDINGS DESIGNS', 'SOCIAL MEDIA CREATIVES', 'SPECIAL DAYS POSTER', 'OTHER'].map(cat => (
+            {['ALL', 'POSTERS', 'AD CREATIVES', 'BROUCHERS', 'HORDINGS', 'LOGO DESIGN', 'BRANDING', 'VIDEOS'].map(cat => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
@@ -856,107 +997,25 @@ export default function App() {
               </button>
             ))}
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-[350px]">
-            {works
-              .filter(work => selectedCategory === 'ALL' || work.category === selectedCategory)
-              .slice(0, visibleCount)
-              .map((work) => {
-                const bgLetter = work.category ? work.category.charAt(0) : 'W';
-                
-                // Handle image / pdf / video file rendering
-                const fileSource = work.fileData || work.fileUrl;
-
-                return (
-                  <div key={work._id} className="portfolio-card hoverable group relative">
-                    <div className="portfolio-bg-letter">{bgLetter}</div>
-                    
-                    {work.type === 'doc' ? (
-                      <iframe 
-                        src={`${fileSource}#toolbar=0&navpanes=0&scrollbar=0`}
-                        className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500" 
-                        style={{ border: 'none', pointerEvents: 'none' }}
-                        title={work.title}
-                      />
-                    ) : work.type === 'video' ? (
-                      // Simple iframe for video sources (YouTube / Vimeo / direct files)
-                      fileSource.includes('youtube.com') || fileSource.includes('youtu.be') || fileSource.includes('vimeo') ? (
-                        <iframe
-                          src={fileSource}
-                          className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500"
-                          title={work.title}
-                          allowFullScreen
-                        />
-                      ) : (
-                        <video 
-                          src={fileSource}
-                          className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-500"
-                          muted 
-                          loop 
-                          playsInline
-                          onMouseOver={(e) => e.target.play()}
-                          onMouseOut={(e) => e.target.pause()}
-                        />
-                      )
-                    ) : (
-                      <img 
-                        src={fileSource} 
-                        alt={work.title} 
-                        className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
-                      />
-                    )}
-                    
-                    <div className="portfolio-overlay">
-                      <div className="text-white/80 text-xs font-bold uppercase tracking-widest mb-2">
-                        {work.category}
-                      </div>
-                      <h3 className="font-bebas text-4xl tracking-widest">
-                        {work.title}
-                      </h3>
-                      {work.description && (
-                        <p className="text-sm text-white/70 mt-2 font-light line-clamp-2">
-                          {work.description}
-                        </p>
-                      )}
-                    </div>
-                    
-                    {/* View Item in Lightbox Modal instead of opening in a new tab */}
-                    <button 
-                      onClick={() => setLightboxItem(work)}
-                      className="absolute inset-0 z-20 w-full h-full cursor-none bg-transparent border-none focus:outline-none"
-                    />
-                  </div>
-                );
-              })}
-          </div>
-
-          {/* Show More / Show Less Controls */}
-          <div className="flex justify-center gap-6 mt-12">
-            {works.filter(work => selectedCategory === 'ALL' || work.category === selectedCategory).length > visibleCount && (
-              <button 
-                onClick={() => setVisibleCount(prev => prev + 9)}
-                className="px-8 py-4 bg-accent text-white font-medium hover:bg-white hover:text-bg transition-colors duration-300 uppercase tracking-widest text-sm"
-              >
-                Show More
-              </button>
-            )}
-            {visibleCount > 9 && (
-              <button 
-                onClick={() => setVisibleCount(9)}
-                className="px-8 py-4 border border-white/20 hover:border-accent hover:text-accent text-white font-medium transition-colors duration-300 uppercase tracking-widest text-sm"
-              >
-                Show Less
-              </button>
-            )}
-          </div>
         </div>
+
+        {/* Portfolio Content */}
+        {selectedCategory === 'ALL' ? (
+          <div className="w-full">
+            {buildMarqueeLayout(works)}
+          </div>
+        ) : (
+          <div className="max-w-6xl mx-auto px-6">
+            {renderNormalGrid(works.filter(work => matchesCategory(work, selectedCategory)))}
+          </div>
+        )}
       </section>
 
       {/* Certifications Section */}
       <section className="py-32 px-6">
         <div className="max-w-7xl mx-auto">
           <h2 className="cert-title font-bebas text-5xl md:text-6xl tracking-wide mb-16 text-center opacity-0 translate-y-10">
-            Credentials & <span className="text-accent">Awards</span>
+            Education & <span className="text-accent">Credentials</span>
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -981,11 +1040,11 @@ export default function App() {
 
             <div className="cert-item opacity-0 translate-y-10 glass-panel p-8 rounded-2xl flex items-center gap-6 hoverable group border-l-4 border-l-white/10 hover:border-l-accent hover:-translate-y-2 transition-all duration-300">
               <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center shrink-0">
-                <i className="fa-solid fa-graduation-cap text-3xl text-white group-hover:text-accent transition-colors"></i>
+                <i className="fa-solid fa-certificate text-3xl text-white group-hover:text-accent transition-colors"></i>
               </div>
               <div>
                 <h4 className="font-bebas text-2xl tracking-widest mb-1 group-hover:text-accent transition-colors">Graphic Designing & Video Editing</h4>
-                <p className="text-gray-400 text-sm"><i className="fa-solid fa-certificate mr-2"></i>Certification from Avoda Edutech</p>
+                <p className="text-gray-400 text-sm"><i className="fa-solid fa-certificate mr-2"></i>Avoda Edutech Private Limited, Kochi (2024)</p>
               </div>
             </div>
 
@@ -994,8 +1053,8 @@ export default function App() {
                 <i className="fa-solid fa-building-columns text-3xl text-white group-hover:text-accent transition-colors"></i>
               </div>
               <div>
-                <h4 className="font-bebas text-2xl tracking-widest mb-1 group-hover:text-accent transition-colors">Higher Secondary Education</h4>
-                <p className="text-gray-400 text-sm"><i className="fa-solid fa-award mr-2"></i>Completed with excellence</p>
+                <h4 className="font-bebas text-2xl tracking-widest mb-1 group-hover:text-accent transition-colors">Higher Secondary (Plus Two)</h4>
+                <p className="text-gray-400 text-sm"><i className="fa-solid fa-award mr-2"></i>Board of Higher Secondary Examinations, Kerala (2018)</p>
               </div>
             </div>
 
@@ -1005,7 +1064,7 @@ export default function App() {
               </div>
               <div>
                 <h4 className="font-bebas text-2xl tracking-widest mb-1 group-hover:text-accent transition-colors">SSLC</h4>
-                <p className="text-gray-400 text-sm"><i className="fa-solid fa-school mr-2"></i>Secondary School Leaving Certificate</p>
+                <p className="text-gray-400 text-sm"><i className="fa-solid fa-school mr-2"></i>Board of Public Examination, Kerala (2016)</p>
               </div>
             </div>
           </div>
