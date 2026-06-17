@@ -41,6 +41,28 @@ export default function App() {
   const ringPos = useRef({ x: 0, y: 0 });
   const timelineVideoRef = useRef(null);
  
+  // Helper to convert base64 to Blob URL for safe browser viewing
+  const base64ToBlobUrl = (dataStr) => {
+    if (dataStr && dataStr.startsWith('data:')) {
+      try {
+        const parts = dataStr.split(';base64,');
+        const contentType = parts[0].split(':')[1];
+        const raw = window.atob(parts[1]);
+        const rawLength = raw.length;
+        const uInt8Array = new Uint8Array(rawLength);
+        for (let i = 0; i < rawLength; ++i) {
+          uInt8Array[i] = raw.charCodeAt(i);
+        }
+        const blob = new Blob([uInt8Array], { type: contentType });
+        return URL.createObjectURL(blob);
+      } catch (e) {
+        console.error('Error converting base64 to blob', e);
+        return dataStr;
+      }
+    }
+    return dataStr;
+  };
+
   // Fetch CV from database
   const fetchCv = async () => {
     try {
@@ -48,7 +70,7 @@ export default function App() {
       if (res.ok) {
         const data = await res.json();
         if (data.fileData) {
-          setCvUrl(data.fileData);
+          setCvUrl(base64ToBlobUrl(data.fileData));
           setCvFileData(data.fileData);
         } else if (data.fileUrl) {
           setCvUrl(data.fileUrl);
@@ -85,7 +107,7 @@ export default function App() {
       if (res.ok) {
         const data = await res.json();
         if (data.fileData) {
-          setCvUrl(data.fileData);
+          setCvUrl(base64ToBlobUrl(data.fileData));
         } else if (data.fileUrl) {
           setCvUrl(data.fileUrl);
         }
