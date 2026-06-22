@@ -234,9 +234,6 @@ export default function App() {
 
   // GSAP animations and Preloader sequence
   useEffect(() => {
-    // Only run animations once works are loaded
-    if (works.length === 0) return;
-
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({
         onComplete: () => setIsLoading(false)
@@ -388,7 +385,7 @@ export default function App() {
       }, 500);
     });
     return () => ctx.revert();
-  }, [works]);
+  }, []);
 
   const handleCancelEdit = () => {
     setEditingId(null);
