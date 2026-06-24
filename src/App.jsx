@@ -33,6 +33,7 @@ export default function App() {
   const [cvFileUrl, setCvFileUrl] = useState('');
   const [cvFileData, setCvFileData] = useState('');
   const [isSubmittingCv, setIsSubmittingCv] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   // Refs for cursor
   const cursorDotRef = useRef(null);
@@ -411,6 +412,7 @@ export default function App() {
     setAdminFileUrl('');
     setAdminFileData('');
     setAdminDescription('');
+    setSelectedFile(null);
   };
 
   const handleEditSelect = (work) => {
@@ -421,6 +423,7 @@ export default function App() {
     setAdminFileUrl(work.fileUrl || '');
     setAdminFileData(work.fileData || '');
     setAdminDescription(work.description || '');
+    setSelectedFile(null);
   };
 
   const handleDeleteWork = async (id) => {
@@ -477,6 +480,34 @@ export default function App() {
     return data.secure_url;
   };
 
+  const getVideoThumbnail = (videoUrl) => {
+    if (!videoUrl) return '';
+    if (videoUrl.includes('cloudinary.com')) {
+      // Replace file extension with .jpg
+      let thumbUrl = videoUrl.replace(/\.[^/.]+$/, ".jpg");
+      // Use Cloudinary transformation to generate dynamic image thumbnail
+      if (!thumbUrl.includes('/c_limit') && !thumbUrl.includes('/w_')) {
+        thumbUrl = thumbUrl.replace('/video/upload/', '/video/upload/w_600,h_800,c_fill,g_auto,so_auto/');
+      }
+      return thumbUrl;
+    }
+    return '';
+  };
+
+  const getPdfThumbnail = (pdfUrl) => {
+    if (!pdfUrl) return '';
+    if (pdfUrl.includes('cloudinary.com')) {
+      // Replace extension with .jpg
+      let thumbUrl = pdfUrl.replace(/\.[^/.]+$/, ".jpg");
+      // Crop to show page 1 (pg_1) dynamically via Cloudinary image transformations
+      if (!thumbUrl.includes('/c_limit') && !thumbUrl.includes('/w_')) {
+        thumbUrl = thumbUrl.replace(/\/raw\/upload\/|\/image\/upload\//, '/image/upload/w_600,h_800,c_fill,g_auto,pg_1/');
+      }
+      return thumbUrl;
+    }
+    return '';
+  };
+
   const compressImage = (file, maxWidth = 1920, maxHeight = 1920, quality = 0.8) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -518,6 +549,16 @@ export default function App() {
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
+      setSelectedFile(file);
+
+      if (file.type === 'application/pdf') {
+        setAdminType('doc');
+      } else if (file.type.startsWith('image/')) {
+        setAdminType('image');
+      } else if (file.type.startsWith('video/')) {
+        setAdminType('video');
+      }
+
       if (file.type.startsWith('image/')) {
         try {
           const compressedDataUrl = await compressImage(file);
@@ -531,16 +572,16 @@ export default function App() {
           reader.readAsDataURL(file);
         }
       } else {
-        if (file.size > 15 * 1024 * 1024) {
-          alert("File is too large. Maximum size is 15MB.");
+        const isVideo = file.type.startsWith('video/');
+        const limit = isVideo ? 100 * 1024 * 1024 : 20 * 1024 * 1024; // 100MB for video, 20MB for PDFs
+        if (file.size > limit) {
+          alert(`File is too large. Maximum size for ${isVideo ? 'videos' : 'documents'} is ${isVideo ? '100MB' : '20MB'}.`);
           e.target.value = "";
+          setSelectedFile(null);
           return;
         }
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setAdminFileData(reader.result);
-        };
-        reader.readAsDataURL(file);
+        // For video/doc, clear adminFileData since we upload the raw selectedFile instead
+        setAdminFileData('');
       }
     }
   };
@@ -554,12 +595,23 @@ export default function App() {
       let finalFileData = '';
 
       if (adminFileData && adminFileData.startsWith('data:')) {
+        // Upload compressed image
         try {
           finalFileUrl = await uploadToCloudinary(adminFileData);
         } catch (uploadErr) {
-          console.error("Cloudinary upload failed:", uploadErr);
+          console.error("Cloudinary image upload failed:", uploadErr);
           alert(`Cloudinary upload failed: ${uploadErr.message}. Falling back to storing in database...`);
           finalFileData = adminFileData;
+        }
+      } else if (selectedFile) {
+        // Upload raw video/doc file
+        try {
+          finalFileUrl = await uploadToCloudinary(selectedFile);
+        } catch (uploadErr) {
+          console.error("Cloudinary file upload failed:", uploadErr);
+          alert(`Cloudinary upload failed: ${uploadErr.message}.`);
+          setIsSubmitting(false);
+          return;
         }
       }
 
@@ -617,6 +669,24 @@ export default function App() {
           />
         );
       }
+      const thumbnail = getVideoThumbnail(src);
+      if (thumbnail) {
+        return (
+          <div className="relative w-full h-full group/video">
+            <img
+              src={thumbnail}
+              alt={work.title}
+              className="w-full h-full object-cover"
+            />
+            {/* Overlay play button icon */}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover/video:bg-black/40 transition-colors">
+              <div className="w-16 h-16 rounded-full bg-accent/80 text-white flex items-center justify-center text-xl shadow-lg transform group-hover/video:scale-110 transition-transform">
+                <i className="fa-solid fa-play ml-1"></i>
+              </div>
+            </div>
+          </div>
+        );
+      }
       return (
         <video
           src={src}
@@ -626,6 +696,44 @@ export default function App() {
           muted
           playsInline
         />
+      );
+    }
+    if (work.type === 'doc') {
+      const thumbnail = getPdfThumbnail(src);
+      if (thumbnail) {
+        return (
+          <div className="relative w-full h-full group/doc">
+            <img
+              src={thumbnail}
+              alt={work.title}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+            {/* Fallback PDF Card (displays behind image, or visible if image fails) */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-900 border border-white/5 p-6 text-center select-none -z-10">
+              <i className="fa-solid fa-file-pdf text-accent text-6xl mb-3"></i>
+              <p className="text-sm font-semibold uppercase tracking-widest text-gray-300 mb-1">View PDF Brochure</p>
+              <span className="text-[10px] text-gray-500 font-light truncate max-w-[200px]">{work.title}</span>
+            </div>
+
+            {/* Hover overlay with document icon */}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover/doc:bg-black/40 transition-colors">
+              <div className="w-16 h-16 rounded-full bg-accent/80 text-white flex items-center justify-center text-xl shadow-lg transform group-hover/doc:scale-110 transition-transform">
+                <i className="fa-solid fa-file-pdf"></i>
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div className="w-full h-full flex flex-col items-center justify-center bg-zinc-900 border border-white/5 p-6 text-center select-none">
+          <i className="fa-solid fa-file-pdf text-accent text-6xl mb-3"></i>
+          <p className="text-sm font-semibold uppercase tracking-widest text-gray-300 mb-1">View PDF Brochure</p>
+          <span className="text-[10px] text-gray-500 font-light truncate max-w-[200px]">{work.title}</span>
+        </div>
       );
     }
     return (
@@ -1438,14 +1546,14 @@ export default function App() {
                       </div>
 
                       <div>
-                        <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2 font-medium">Upload File (Image/PDF)</label>
+                        <label className="block text-xs uppercase tracking-widest text-gray-400 mb-2 font-medium">Upload File (Image/PDF/Video)</label>
                         <input
                           type="file"
                           onChange={handleFileChange}
-                          accept="image/*,application/pdf"
+                          accept="image/*,application/pdf,video/*"
                           className="w-full bg-[#141414] border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-accent transition-colors"
                         />
-                        <p className="text-xs text-gray-500 mt-1">Converts file to Base64 stored in database.</p>
+                        <p className="text-xs text-gray-500 mt-1">Uploads file to Cloudinary and saves the URL.</p>
                       </div>
 
                       <div>
@@ -1566,8 +1674,10 @@ export default function App() {
             <div className="w-full max-h-[75vh] flex items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black/50">
               {lightboxItem.type === 'doc' ? (
                 <iframe
-                  src={lightboxItem.fileData || lightboxItem.fileUrl}
-                  className="w-[90vw] md:w-[70vw] h-[70vh] rounded-lg"
+                  src={lightboxItem.fileUrl && lightboxItem.fileUrl.startsWith('http')
+                    ? `https://docs.google.com/gview?url=${encodeURIComponent(lightboxItem.fileUrl)}&embedded=true`
+                    : lightboxItem.fileData || lightboxItem.fileUrl}
+                  className="w-[90vw] md:w-[70vw] h-[70vh] rounded-lg bg-white"
                   title={lightboxItem.title}
                 />
               ) : lightboxItem.type === 'video' ? (
@@ -1600,6 +1710,18 @@ export default function App() {
                 {lightboxItem.category}
               </span>
               <h3 className="font-bebas text-3xl tracking-wide text-white mt-4">{lightboxItem.title}</h3>
+              {lightboxItem.type === 'doc' && (
+                <div className="mt-4">
+                  <a
+                    href={lightboxItem.fileUrl || lightboxItem.fileData}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 hoverable text-xs font-semibold px-6 py-3 bg-accent text-white hover:bg-white hover:text-bg transition-all duration-300 rounded-full"
+                  >
+                    <i className="fa-solid fa-file-arrow-down text-sm"></i> Open / Download PDF Brochure
+                  </a>
+                </div>
+              )}
               {lightboxItem.description && (
                 <p className="text-gray-400 text-sm font-light leading-relaxed mt-2">
                   {lightboxItem.description}
