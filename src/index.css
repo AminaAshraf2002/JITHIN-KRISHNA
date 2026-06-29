@@ -486,10 +486,14 @@ nav {
 .gallery-marquee-content {
   display: flex;
   gap: 1.5rem;
-  animation: galleryMarqueeScroll 53s linear infinite;
+  animation: galleryMarqueeScroll 120s linear infinite;
   will-change: transform;
   height: 100%;
   width: max-content;
+}
+
+.gallery-marquee-wrapper:hover .gallery-marquee-content {
+  animation-play-state: paused;
 }
 
 /* Column wrapper for 2 short cards stacked vertically */
@@ -582,7 +586,7 @@ nav {
   }
 
   .gallery-marquee-content {
-    animation-duration: 70s;
+    animation-duration: 150s;
   }
 }
 
@@ -606,7 +610,7 @@ nav {
 
   .gallery-marquee-content {
     gap: 1.2rem;
-    animation-duration: 80s;
+    animation-duration: 180s;
   }
 }
 
@@ -634,7 +638,7 @@ nav {
 
   .gallery-marquee-content {
     gap: 1rem;
-    animation-duration: 90s;
+    animation-duration: 200s;
   }
 }
 
