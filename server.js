@@ -187,9 +187,18 @@ app.post('/api/cv', async (req, res) => {
   }
 });
 
+// Root & Health check routes for DigitalOcean App Platform / Docker
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
+});
+
+app.get('/', (req, res) => {
+  res.json({ message: 'Stitch Creative Portfolio API is running smoothly on DigitalOcean.' });
+});
+
 if (!process.env.VERCEL) {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
   });
 }
 

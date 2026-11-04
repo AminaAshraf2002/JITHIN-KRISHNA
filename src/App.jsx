@@ -26,6 +26,7 @@ export default function App() {
   const [selectedCategory, setSelectedCategory] = useState('ALL'); // Filter category state
   const [visibleCount, setVisibleCount] = useState(9); // Limit items shown initially
   const [lightboxItem, setLightboxItem] = useState(null); // Tracks item being viewed in lightbox
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Mobile menu toggle
 
   // CV management states
   const [activeAdminTab, setActiveAdminTab] = useState('works');
@@ -47,14 +48,14 @@ export default function App() {
     if (dataStr && dataStr.startsWith('data:')) {
       try {
         const parts = dataStr.split(';base64,');
-        const contentType = parts[0].split(':')[1];
-        const raw = window.atob(parts[1]);
-        const rawLength = raw.length;
-        const uInt8Array = new Uint8Array(rawLength);
-        for (let i = 0; i < rawLength; ++i) {
-          uInt8Array[i] = raw.charCodeAt(i);
+        const contentType = parts[0].split(':')[1] || 'application/pdf';
+        const byteCharacters = window.atob(parts[1]);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
         }
-        const blob = new Blob([uInt8Array], { type: contentType });
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: contentType });
         return URL.createObjectURL(blob);
       } catch (e) {
         console.error('Error converting base64 to blob', e);
@@ -105,15 +106,26 @@ export default function App() {
 
     try {
       let finalFileUrl = cvFileUrl;
-      let finalFileData = '';
+      let finalFileData = cvFileData || '';
 
       if (cvFileData && cvFileData.startsWith('data:')) {
         try {
-          finalFileUrl = await uploadToCloudinary(cvFileData);
+          // Upload to Cloudinary using raw resource type for authentic PDF binary delivery
+          const formData = new FormData();
+          formData.append('file', cvFileData);
+          formData.append('upload_preset', 'portfolio_preset');
+
+          const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/xu6e72nr/raw/upload`, {
+            method: 'POST',
+            body: formData
+          });
+
+          if (uploadRes.ok) {
+            const uploadData = await uploadRes.json();
+            finalFileUrl = uploadData.secure_url;
+          }
         } catch (uploadErr) {
-          console.error("Cloudinary CV upload failed:", uploadErr);
-          alert(`Cloudinary upload failed: ${uploadErr.message}. Falling back to storing in database...`);
-          finalFileData = cvFileData;
+          console.warn("Cloudinary raw CV upload failed, using database storage:", uploadErr);
         }
       }
 
@@ -861,17 +873,17 @@ export default function App() {
     }
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-6">
         {filteredItems.map(work => (
           <div
             key={work._id}
             onClick={() => setLightboxItem(work)}
-            className="portfolio-card hoverable cursor-pointer h-[340px]"
+            className="portfolio-card hoverable cursor-pointer h-[210px] sm:h-[300px] md:h-[340px] 2xl:h-[360px] rounded-lg sm:rounded-xl overflow-hidden"
           >
             {renderWorkMedia(work)}
-            <div className="portfolio-overlay">
-              <div className="text-white/85 text-xs font-bold uppercase tracking-widest mb-2">{work.category}</div>
-              <h3 className="font-bebas text-4xl tracking-widest">{work.title}</h3>
+            <div className="portfolio-overlay !p-3 sm:!p-6 md:!p-10">
+              <div className="text-white/85 text-[9px] sm:text-xs font-bold uppercase tracking-wider sm:tracking-widest mb-1 sm:mb-2">{work.category}</div>
+              <h3 className="font-bebas text-lg sm:text-3xl md:text-4xl tracking-wider leading-tight sm:leading-none">{work.title}</h3>
             </div>
           </div>
         ))}
@@ -900,25 +912,25 @@ export default function App() {
       </div>
 
       {/* Navbar */}
-      <nav className="fixed top-0 w-full z-50 border-b border-white/5 opacity-0 invisible" id="navbar">
-        <div className="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
-          <a href="#" className="font-bebas text-3xl tracking-wider flex items-end">
+      <nav className="fixed top-0 w-full z-50 border-b border-white/5 opacity-0 invisible backdrop-blur-md bg-[#0A0A0A]/80" id="navbar">
+        <div className="max-w-7xl 2xl:max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-4 sm:py-5 2xl:py-6 flex justify-between items-center">
+          <a href="#" className="font-bebas text-2xl sm:text-3xl 2xl:text-4xl tracking-wider flex items-end">
             J<span className="text-accent">.</span>K
           </a>
-          <div className="flex gap-8 items-center text-sm font-medium tracking-widest uppercase">
-            <div className="hidden md:flex gap-8">
-              <a href="#about" className="hover:text-accent transition-colors">About</a>
-              <a href="#experience" className="hover:text-accent transition-colors">Experience</a>
-              <a href="#work" className="hover:text-accent transition-colors">Work</a>
-              <a href="#contact" className="hover:text-accent transition-colors">Contact</a>
-            </div>
+
+          {/* Desktop Nav */}
+          <div className="hidden md:flex gap-6 lg:gap-8 2xl:gap-10 items-center text-xs lg:text-sm 2xl:text-base font-medium tracking-widest uppercase">
+            <a href="#about" className="hover:text-accent transition-colors">About</a>
+            <a href="#experience" className="hover:text-accent transition-colors">Experience</a>
+            <a href="#work" className="hover:text-accent transition-colors">Work</a>
+            <a href="#contact" className="hover:text-accent transition-colors">Contact</a>
 
             {/* View CV Button */}
             <a
               href={cvUrl}
               target="_blank"
               rel="noreferrer"
-              className="hoverable text-xs font-semibold px-4 py-2 border border-white/20 text-white hover:border-accent hover:text-accent transition-all duration-300 rounded-full flex items-center gap-2"
+              className="hoverable text-xs 2xl:text-sm font-semibold px-4 py-2 2xl:px-5 2xl:py-2.5 border border-white/20 text-white hover:border-accent hover:text-accent transition-all duration-300 rounded-full flex items-center gap-2"
             >
               <i className="fa-solid fa-file-pdf"></i> View CV
             </a>
@@ -926,66 +938,175 @@ export default function App() {
             {/* Manage Portfolio Action */}
             <button
               onClick={() => setIsAdminOpen(true)}
-              className="hoverable text-xs font-semibold px-4 py-2 border border-accent text-accent hover:bg-accent hover:text-white transition-all duration-300 rounded-full flex items-center gap-2"
+              className="hoverable text-xs 2xl:text-sm font-semibold px-4 py-2 2xl:px-5 2xl:py-2.5 border border-accent text-accent hover:bg-accent hover:text-white transition-all duration-300 rounded-full flex items-center gap-2"
             >
               <i className="fa-solid fa-folder-plus"></i> Upload Work
             </button>
           </div>
+
+          {/* Mobile Right Bar */}
+          <div className="flex md:hidden items-center gap-3">
+            <a
+              href={cvUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="text-[11px] font-semibold px-3 py-1.5 border border-white/20 text-white hover:border-accent hover:text-accent rounded-full flex items-center gap-1.5"
+            >
+              <i className="fa-solid fa-file-pdf text-accent"></i> CV
+            </a>
+
+            {/* Mobile Hamburger Button */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="w-10 h-10 flex items-center justify-center rounded-lg border border-white/10 text-white hover:border-accent hover:text-accent focus:outline-none"
+              aria-label="Toggle Navigation Menu"
+            >
+              <i className={`fa-solid ${isMobileMenuOpen ? 'fa-xmark text-lg' : 'fa-bars text-base'}`}></i>
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Navigation Drawer */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden border-t border-white/10 bg-[#0A0A0A]/95 backdrop-blur-xl px-6 py-6 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="flex flex-col gap-4 text-sm font-semibold tracking-widest uppercase">
+              <a
+                href="#about"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="py-2 border-b border-white/5 hover:text-accent transition-colors flex items-center justify-between"
+              >
+                <span>About</span>
+                <i className="fa-solid fa-arrow-right text-xs text-accent"></i>
+              </a>
+              <a
+                href="#experience"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="py-2 border-b border-white/5 hover:text-accent transition-colors flex items-center justify-between"
+              >
+                <span>Experience</span>
+                <i className="fa-solid fa-arrow-right text-xs text-accent"></i>
+              </a>
+              <a
+                href="#work"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="py-2 border-b border-white/5 hover:text-accent transition-colors flex items-center justify-between"
+              >
+                <span>Work</span>
+                <i className="fa-solid fa-arrow-right text-xs text-accent"></i>
+              </a>
+              <a
+                href="#contact"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="py-2 border-b border-white/5 hover:text-accent transition-colors flex items-center justify-between"
+              >
+                <span>Contact</span>
+                <i className="fa-solid fa-arrow-right text-xs text-accent"></i>
+              </a>
+            </div>
+
+            <div className="pt-2 flex flex-col gap-3">
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsAdminOpen(true);
+                }}
+                className="w-full py-3 text-xs font-semibold uppercase tracking-widest border border-accent text-accent hover:bg-accent hover:text-white rounded-full flex items-center justify-center gap-2 transition-colors"
+              >
+                <i className="fa-solid fa-folder-plus"></i> Upload Work / Admin
+              </button>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
+      <section className="relative min-h-screen flex items-center pt-24 pb-8 sm:pt-28 sm:pb-10 md:pt-20 md:pb-8 lg:pt-20 lg:pb-8 xl:pt-24 xl:pb-12 2xl:pt-28 2xl:pb-20 overflow-hidden">
         <div className="watermark" id="hero-watermark">DESIGN</div>
 
-        <div className="max-w-7xl mx-auto px-6 w-full grid grid-cols-1 lg:grid-cols-2 gap-20 items-center z-10">
-          <div className="space-y-8 hero-content">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-[2px] bg-accent"></div>
-              <span className="uppercase tracking-widest text-sm text-gray-400 font-medium">Available for Projects</span>
+        <div className="max-w-7xl 2xl:max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 w-full grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-6 lg:gap-8 xl:gap-12 2xl:gap-20 items-center z-10">
+          <div className="space-y-4 sm:space-y-6 md:space-y-4 lg:space-y-5 xl:space-y-6 2xl:space-y-8 hero-content md:col-span-7">
+            <div className="flex items-center justify-center md:justify-start gap-3 sm:gap-4">
+              <div className="w-8 sm:w-10 2xl:w-12 h-[2px] bg-accent"></div>
+              <span className="uppercase tracking-widest text-xs sm:text-sm 2xl:text-base text-gray-400 font-medium">Available for Projects</span>
             </div>
 
-            <h1 className="font-bebas text-[5rem] md:text-[7rem] leading-[0.85] tracking-wide">
+            <h1 className="font-bebas text-center md:text-left text-4xl sm:text-5xl md:text-[3.5rem] lg:text-[4.4rem] xl:text-[5.4rem] 2xl:text-[7.6rem] 3xl:text-[8.4rem] leading-[0.88] tracking-wide">
               JITHIN <br />
               <span className="text-accent">KRISHNAN</span>
             </h1>
 
-            <div className="space-y-4 max-w-lg">
-              <h2 className="text-xl md:text-2xl font-light text-gray-300">Graphic Designer · Video Editor</h2>
-              <p className="text-gray-400 leading-relaxed font-light">
+            {/* Mobile Profile Image: Placed below name and above description with increased width */}
+            <div className="block md:hidden pt-1.5 pb-7 my-2">
+              <div className="relative mx-auto w-[265px] h-[320px] sm:w-[285px] sm:h-[340px]">
+                <div className="image-frame w-full h-full relative">
+                  <img
+                    src="/img.png"
+                    alt="Jithin Krishnan"
+                    className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700 rounded-sm shadow-xl"
+                  />
+
+                  {/* Compact Mobile Badges */}
+                  <div className="absolute -bottom-3 left-0 bg-[#111] border border-white/10 px-3 py-1.5 rounded-sm flex items-center gap-2 shadow-2xl z-20">
+                    <span className="text-accentSec text-xs"><i className="fa-solid fa-star"></i></span>
+                    <div>
+                      <p className="text-[7px] text-gray-400 uppercase tracking-wider leading-none">Award Winner</p>
+                      <p className="font-bebas text-xs tracking-wider leading-none mt-0.5">Best Performer 2025</p>
+                    </div>
+                  </div>
+
+                  <div className="absolute top-3 -right-3 bg-[#111] border border-white/10 px-2.5 py-1.5 flex flex-col items-center z-20">
+                    <span className="font-bebas text-lg text-accent leading-none">1+</span>
+                    <span className="text-[7px] text-gray-400 uppercase tracking-widest mt-0.5">Yrs Exp</span>
+                  </div>
+
+                  <div className="absolute top-16 -right-3 bg-[#111] border border-white/10 px-2.5 py-1.5 flex flex-col items-center z-20">
+                    <span className="font-bebas text-lg text-white leading-none">500+</span>
+                    <span className="text-[7px] text-gray-400 uppercase tracking-widest mt-0.5">Projects</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 sm:mt-4 md:mt-0 space-y-3 sm:space-y-4 max-w-xl 2xl:max-w-2xl">
+              <h2 className="text-base sm:text-lg md:text-lg lg:text-xl xl:text-2xl 2xl:text-3xl font-light text-gray-300">Graphic Designer · Video Editor</h2>
+              <p className="text-gray-400 leading-relaxed font-light text-xs sm:text-sm md:text-sm lg:text-sm xl:text-base 2xl:text-lg 3xl:text-xl">
                 Creative and detail-oriented Graphic Designer with 1+ year of professional experience. Based in Palakkad, Kerala, specializing in social media creatives, brochures, branding materials, and promotional video editing.
               </p>
             </div>
 
-            <div className="flex flex-wrap gap-6 pt-4">
-              <a href="#work" className="px-8 py-4 bg-accent text-white font-medium hover:bg-white hover:text-bg transition-colors duration-300">View My Work</a>
-              <a href="#contact" className="px-8 py-4 border border-white/20 font-medium hover:border-accent hover:text-accent transition-colors duration-300">Let's Talk</a>
-              <a href={cvUrl} target="_blank" rel="noreferrer" className="px-8 py-4 border border-white/20 font-medium hover:border-accent hover:text-accent transition-colors duration-300 flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-3 sm:gap-4 pt-1 sm:pt-3">
+              <a href="#work" className="px-5 sm:px-6 md:px-5 lg:px-6 xl:px-8 2xl:px-10 py-2.5 sm:py-3 md:py-2.5 lg:py-3 xl:py-3.5 2xl:py-5 bg-accent text-white font-medium hover:bg-white hover:text-bg transition-colors duration-300 text-center text-xs sm:text-sm md:text-xs lg:text-sm xl:text-base 2xl:text-lg">View My Work</a>
+              <a href="#contact" className="px-5 sm:px-6 md:px-5 lg:px-6 xl:px-8 2xl:px-10 py-2.5 sm:py-3 md:py-2.5 lg:py-3 xl:py-3.5 2xl:py-5 border border-white/20 font-medium hover:border-accent hover:text-accent transition-colors duration-300 text-center text-xs sm:text-sm md:text-xs lg:text-sm xl:text-base 2xl:text-lg">Let's Talk</a>
+              <a href={cvUrl} target="_blank" rel="noreferrer" className="px-5 sm:px-6 md:px-5 lg:px-6 xl:px-8 2xl:px-10 py-2.5 sm:py-3 md:py-2.5 lg:py-3 xl:py-3.5 2xl:py-5 border border-white/20 font-medium hover:border-accent hover:text-accent transition-colors duration-300 flex items-center justify-center gap-2 text-center text-xs sm:text-sm md:text-xs lg:text-sm xl:text-base 2xl:text-lg">
                 <i className="fa-solid fa-file-pdf"></i> View CV
               </a>
             </div>
           </div>
 
-          <div className="relative hero-image hidden lg:block">
-            <div className="image-frame w-[400px] h-[550px] ml-auto">
-              <img src="/img.png" alt="Jithin Krishnan" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700" />
+          {/* Tablet & Desktop Profile Image (Right Side on md: and above) */}
+          <div className="relative hero-image hidden md:flex md:col-span-5 justify-center md:justify-end">
+            <div className="image-frame w-[270px] h-[370px] md:w-[280px] md:h-[380px] lg:w-[320px] lg:h-[430px] xl:w-[370px] xl:h-[490px] 2xl:w-[500px] 2xl:h-[680px] 3xl:w-[540px] 3xl:h-[720px] relative">
+              <img src="/img.png" alt="Jithin Krishnan" className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-700 rounded-sm shadow-2xl" />
 
-              <div className="absolute bottom-6 -left-10 bg-[#111] border border-white/10 p-5 rounded-sm flex items-center gap-4 shadow-2xl animate-[pulse_3s_ease-in-out_infinite]">
-                <span className="text-accentSec text-2xl"><i className="fa-solid fa-star"></i></span>
+              {/* Award Winner Badge */}
+              <div className="absolute -bottom-3 -left-3 sm:-bottom-2 sm:-left-4 md:bottom-2 md:-left-4 lg:bottom-4 lg:-left-6 xl:bottom-5 xl:-left-7 2xl:bottom-6 2xl:-left-8 bg-[#111] border border-white/10 p-2.5 sm:p-3 md:p-3 lg:p-3.5 2xl:p-5 rounded-sm flex items-center gap-2 sm:gap-2.5 2xl:gap-4 shadow-2xl animate-[pulse_3s_ease-in-out_infinite] z-20">
+                <span className="text-accentSec text-lg sm:text-xl lg:text-xl 2xl:text-3xl"><i className="fa-solid fa-star"></i></span>
                 <div>
-                  <p className="text-xs text-gray-400 uppercase tracking-wider mb-1">Award Winner</p>
-                  <p className="font-bebas text-xl tracking-wider">Best Performer 2025</p>
+                  <p className="text-[9px] sm:text-[10px] 2xl:text-sm text-gray-400 uppercase tracking-wider mb-0.5">Award Winner</p>
+                  <p className="font-bebas text-sm sm:text-base lg:text-lg 2xl:text-2xl tracking-wider leading-none">Best Performer 2025</p>
                 </div>
               </div>
 
-              <div className="absolute top-10 -right-16 bg-[#111] border border-white/10 px-5 py-3 flex flex-col items-center">
-                <span className="font-bebas text-3xl text-accent">1+</span>
-                <span className="text-[10px] text-gray-400 uppercase tracking-widest">Yrs Exp</span>
+              {/* 1+ Yrs Exp Badge */}
+              <div className="absolute top-3 -right-3 sm:top-5 sm:-right-5 md:top-4 md:-right-4 lg:top-5 lg:-right-5 xl:top-6 xl:-right-6 2xl:top-8 2xl:-right-8 bg-[#111] border border-white/10 px-2.5 sm:px-3 lg:px-3.5 2xl:px-5 py-1.5 sm:py-2 2xl:py-4 flex flex-col items-center z-20">
+                <span className="font-bebas text-lg sm:text-xl md:text-2xl 2xl:text-4xl text-accent leading-none">1+</span>
+                <span className="text-[8px] sm:text-[9px] 2xl:text-xs text-gray-400 uppercase tracking-widest mt-0.5 2xl:mt-1">Yrs Exp</span>
               </div>
 
-              <div className="absolute top-32 -right-10 bg-[#111] border border-white/10 px-5 py-3 flex flex-col items-center">
-                <span className="font-bebas text-3xl text-white">500+</span>
-                <span className="text-[10px] text-gray-400 uppercase tracking-widest">Projects</span>
+              {/* 500+ Projects Badge */}
+              <div className="absolute top-16 sm:top-20 md:top-20 lg:top-22 xl:top-26 2xl:top-36 -right-3 sm:-right-5 md:-right-4 lg:-right-5 xl:-right-6 2xl:-right-8 bg-[#111] border border-white/10 px-2.5 sm:px-3 lg:px-3.5 2xl:px-5 py-1.5 sm:py-2 2xl:py-4 flex flex-col items-center z-20">
+                <span className="font-bebas text-lg sm:text-xl md:text-2xl 2xl:text-4xl text-white leading-none">500+</span>
+                <span className="text-[8px] sm:text-[9px] 2xl:text-xs text-gray-400 uppercase tracking-widest mt-0.5 2xl:mt-1">Projects</span>
               </div>
             </div>
           </div>
@@ -1011,126 +1132,124 @@ export default function App() {
       </div>
 
       {/* About Section */}
-      <section id="about" className="pt-40 pb-20 px-6 relative">
+      <section id="about" className="py-20 sm:py-28 lg:py-36 px-4 sm:px-6 lg:px-8 relative">
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-accent/5 to-transparent pointer-events-none -z-10"></div>
         <div className="absolute -bottom-32 -left-32 w-96 h-96 bg-accentSec/10 rounded-full blur-[120px] pointer-events-none -z-10"></div>
 
-        <div className="max-w-7xl mx-auto glass-panel rounded-3xl p-10 md:pt-24 md:px-24 md:pb-16 relative overflow-hidden">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 relative z-10">
+        <div className="max-w-7xl 2xl:max-w-[1680px] mx-auto glass-panel rounded-3xl p-6 sm:p-10 md:p-14 lg:p-16 2xl:p-20 relative overflow-hidden">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 2xl:gap-24 relative z-10">
             {/* Left Column */}
-            <div className="space-y-10">
-              <div className="about-fade-up inline-flex items-center gap-3 border border-accent/30 bg-accent/5 text-accent text-xs font-bold uppercase tracking-widest px-5 py-2 rounded-full">
+            <div className="space-y-8 sm:space-y-10">
+              <div className="about-fade-up inline-flex items-center gap-3 border border-accent/30 bg-accent/5 text-accent text-xs font-bold uppercase tracking-widest px-4 sm:px-5 py-2 rounded-full">
                 <i className="fa-solid fa-user-astronaut"></i> About The Creator
               </div>
 
-              <h2 className="font-bebas text-5xl md:text-7xl tracking-wide leading-none">
+              <h2 className="font-bebas text-4xl sm:text-6xl md:text-7xl 2xl:text-8xl tracking-wide leading-none">
                 <div className="about-text-mask"><span className="about-title-line block">The Story</span></div>
                 <div className="about-text-mask"><span className="about-title-line block">Behind The <span className="text-accent">Work</span></span></div>
               </h2>
 
-              <div className="space-y-6 text-gray-400 font-light leading-relaxed text-lg">
-                <p className="about-para"><i className="fa-solid fa-quote-left text-accentSec/30 text-2xl mr-3"></i>Creative and detail-oriented Graphic Designer with 1+ year of professional experience in digital marketing and visual content creation. Currently working at <strong>Inspite Technologies, Infopark Kochi</strong>, specializing in social media creatives, brochures, hoarding designs, app banners, branding materials, and promotional video editing.</p>
+              <div className="space-y-4 sm:space-y-6 text-gray-400 font-light leading-relaxed text-base sm:text-lg">
+                <p className="about-para"><i className="fa-solid fa-quote-left text-accentSec/30 text-xl sm:text-2xl mr-2 sm:mr-3"></i>Creative and detail-oriented Graphic Designer with 1+ year of professional experience in digital marketing and visual content creation. Currently working at <strong>Inspite Technologies, Infopark Kochi</strong>, specializing in social media creatives, brochures, hoarding designs, app banners, branding materials, and promotional video editing.</p>
                 <p className="about-para">Skilled in creating modern, visually engaging, and marketing-focused designs that improve audience engagement and brand visibility. Proficient in Adobe Photoshop, Illustrator, InDesign, Premiere Pro, and Canva with strong expertise in digital advertising, layout design, and visual communication.</p>
                 <p className="about-para">Experienced in managing multiple creative projects within deadline-driven environments while maintaining high-quality design standards and client satisfaction. Also actively working as a freelance Graphic Designer and Video Editor for brands, startups, and businesses.</p>
               </div>
-
-
             </div>
 
             {/* Right Column (Skills & Tools) */}
-            <div className="space-y-16">
+            <div className="space-y-12 sm:space-y-16">
               {/* Skills */}
-              <div className="space-y-8">
-                <h3 className="about-fade-up font-bebas text-4xl tracking-widest flex items-center gap-3">
+              <div className="space-y-6 sm:space-y-8">
+                <h3 className="about-fade-up font-bebas text-3xl sm:text-4xl tracking-widest flex items-center gap-3">
                   <i className="fa-solid fa-chart-pie text-accent"></i> Core Competencies
                 </h3>
 
-                <div className="space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-x-6 gap-y-4 sm:gap-y-5">
                   {/* Graphic Design */}
                   <div className="about-skill-item">
-                    <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
+                    <div className="flex justify-between text-xs sm:text-sm uppercase tracking-widest mb-2 font-medium">
                       <span><i className="fa-solid fa-palette text-accent mr-2"></i>Graphic Design</span>
-                      <span className="text-accent">98%</span>
+                      <span className="text-accent font-semibold">98%</span>
                     </div>
                     <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="98%"></div></div>
                   </div>
                   {/* Video Editing */}
                   <div className="about-skill-item">
-                    <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
+                    <div className="flex justify-between text-xs sm:text-sm uppercase tracking-widest mb-2 font-medium">
                       <span><i className="fa-solid fa-video text-accent mr-2"></i>Video Editing</span>
-                      <span className="text-accent">95%</span>
+                      <span className="text-accent font-semibold">95%</span>
                     </div>
                     <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="95%"></div></div>
                   </div>
                   {/* Social Media Poster Design */}
                   <div className="about-skill-item">
-                    <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
-                      <span><i className="fa-solid fa-image text-accent mr-2"></i>Social Media Poster Design</span>
-                      <span className="text-accent">93%</span>
+                    <div className="flex justify-between text-xs sm:text-sm uppercase tracking-widest mb-2 font-medium">
+                      <span><i className="fa-solid fa-image text-accent mr-2"></i>Poster Design</span>
+                      <span className="text-accent font-semibold">93%</span>
                     </div>
                     <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="93%"></div></div>
                   </div>
                   {/* LOGO design */}
                   <div className="about-skill-item">
-                    <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
+                    <div className="flex justify-between text-xs sm:text-sm uppercase tracking-widest mb-2 font-medium">
                       <span><i className="fa-solid fa-bezier-curve text-accent mr-2"></i>LOGO design</span>
-                      <span className="text-accent">91%</span>
+                      <span className="text-accent font-semibold">91%</span>
                     </div>
                     <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="91%"></div></div>
                   </div>
                   {/* branding */}
                   <div className="about-skill-item">
-                    <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
-                      <span><i className="fa-solid fa-fingerprint text-accent mr-2"></i>branding</span>
-                      <span className="text-accent">90%</span>
+                    <div className="flex justify-between text-xs sm:text-sm uppercase tracking-widest mb-2 font-medium">
+                      <span><i className="fa-solid fa-fingerprint text-accent mr-2"></i>Branding</span>
+                      <span className="text-accent font-semibold">90%</span>
                     </div>
                     <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="90%"></div></div>
                   </div>
                   {/* Hoarding Design */}
                   <div className="about-skill-item">
-                    <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
+                    <div className="flex justify-between text-xs sm:text-sm uppercase tracking-widest mb-2 font-medium">
                       <span><i className="fa-solid fa-ad text-accent mr-2"></i>Hoarding Design</span>
-                      <span className="text-accent">88%</span>
+                      <span className="text-accent font-semibold">88%</span>
                     </div>
                     <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="88%"></div></div>
                   </div>
                   {/* Brochure Design */}
                   <div className="about-skill-item">
-                    <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
+                    <div className="flex justify-between text-xs sm:text-sm uppercase tracking-widest mb-2 font-medium">
                       <span><i className="fa-solid fa-book-open text-accent mr-2"></i>Brochure Design</span>
-                      <span className="text-accent">87%</span>
+                      <span className="text-accent font-semibold">87%</span>
                     </div>
                     <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="87%"></div></div>
                   </div>
                   {/* App Banner Design */}
                   <div className="about-skill-item">
-                    <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
+                    <div className="flex justify-between text-xs sm:text-sm uppercase tracking-widest mb-2 font-medium">
                       <span><i className="fa-solid fa-flag text-accent mr-2"></i>App Banner Design</span>
-                      <span className="text-accent">86%</span>
+                      <span className="text-accent font-semibold">86%</span>
                     </div>
                     <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="86%"></div></div>
                   </div>
                   {/* Branding & Visual Identity */}
                   <div className="about-skill-item">
-                    <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
-                      <span><i className="fa-solid fa-signature text-accent mr-2"></i>Branding & Visual Identity</span>
-                      <span className="text-accent">85%</span>
+                    <div className="flex justify-between text-xs sm:text-sm uppercase tracking-widest mb-2 font-medium">
+                      <span><i className="fa-solid fa-signature text-accent mr-2"></i>Visual Identity</span>
+                      <span className="text-accent font-semibold">85%</span>
                     </div>
                     <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="85%"></div></div>
                   </div>
                   {/* Print & Digital Advertising */}
                   <div className="about-skill-item">
-                    <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
-                      <span><i className="fa-solid fa-bullhorn text-accent mr-2"></i>Print & Digital Advertising</span>
-                      <span className="text-accent">83%</span>
+                    <div className="flex justify-between text-xs sm:text-sm uppercase tracking-widest mb-2 font-medium">
+                      <span><i className="fa-solid fa-bullhorn text-accent mr-2"></i>Digital Ads</span>
+                      <span className="text-accent font-semibold">83%</span>
                     </div>
                     <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="83%"></div></div>
                   </div>
                   {/* Creative Concept Development */}
-                  <div className="about-skill-item">
-                    <div className="flex justify-between text-sm uppercase tracking-widest mb-3 font-medium">
+                  <div className="about-skill-item sm:col-span-2 lg:col-span-1 xl:col-span-2">
+                    <div className="flex justify-between text-xs sm:text-sm uppercase tracking-widest mb-2 font-medium">
                       <span><i className="fa-solid fa-lightbulb text-accent mr-2"></i>Creative Concept Development</span>
-                      <span className="text-accent">80%</span>
+                      <span className="text-accent font-semibold">80%</span>
                     </div>
                     <div className="skill-bar-bg rounded-full h-2"><div className="skill-bar-fill rounded-full" data-width="80%"></div></div>
                   </div>
@@ -1138,17 +1257,17 @@ export default function App() {
               </div>
 
               {/* Tools */}
-              <div className="space-y-8">
-                <h3 className="about-fade-up font-bebas text-4xl tracking-widest flex items-center gap-3">
+              <div className="space-y-6 sm:space-y-8">
+                <h3 className="about-fade-up font-bebas text-3xl sm:text-4xl tracking-widest flex items-center gap-3">
                   <i className="fa-solid fa-layer-group text-accent"></i> Software Stack
                 </h3>
-                <div className="flex flex-wrap gap-4">
-                  <div className="about-tool-tag tool-tag border border-white/10 rounded-lg px-6 py-4 text-sm font-medium uppercase tracking-widest bg-white/5 backdrop-blur-md shadow-lg"><i className="fa-brands fa-adobe mr-2 text-accent"></i>Photoshop</div>
-                  <div className="about-tool-tag tool-tag border border-white/10 rounded-lg px-6 py-4 text-sm font-medium uppercase tracking-widest bg-white/5 backdrop-blur-md shadow-lg"><i className="fa-brands fa-adobe mr-2 text-accent"></i>Illustrator</div>
-                  <div className="about-tool-tag tool-tag border border-white/10 rounded-lg px-6 py-4 text-sm font-medium uppercase tracking-widest bg-white/5 backdrop-blur-md shadow-lg"><i className="fa-brands fa-adobe mr-2 text-accent"></i>InDesign</div>
-                  <div className="about-tool-tag tool-tag border border-white/10 rounded-lg px-6 py-4 text-sm font-medium uppercase tracking-widest bg-white/5 backdrop-blur-md shadow-lg"><i className="fa-solid fa-video mr-2 text-accent"></i>Premiere Pro</div>
-                  <div className="about-tool-tag tool-tag border border-white/10 rounded-lg px-6 py-4 text-sm font-medium uppercase tracking-widest bg-white/5 backdrop-blur-md shadow-lg"><i className="fa-solid fa-clapperboard mr-2 text-accent"></i>CapCut</div>
-                  <div className="about-tool-tag tool-tag border border-white/10 rounded-lg px-6 py-4 text-sm font-medium uppercase tracking-widest bg-white/5 backdrop-blur-md shadow-lg"><i className="fa-solid fa-pen-nib mr-2 text-accent"></i>Canva</div>
+                <div className="flex flex-wrap gap-2.5 sm:gap-4">
+                  <div className="about-tool-tag tool-tag border border-white/10 rounded-lg px-4 sm:px-6 py-2.5 sm:py-3.5 text-xs sm:text-sm font-medium uppercase tracking-widest bg-white/5 backdrop-blur-md shadow-lg"><i className="fa-brands fa-adobe mr-2 text-accent"></i>Photoshop</div>
+                  <div className="about-tool-tag tool-tag border border-white/10 rounded-lg px-4 sm:px-6 py-2.5 sm:py-3.5 text-xs sm:text-sm font-medium uppercase tracking-widest bg-white/5 backdrop-blur-md shadow-lg"><i className="fa-brands fa-adobe mr-2 text-accent"></i>Illustrator</div>
+                  <div className="about-tool-tag tool-tag border border-white/10 rounded-lg px-4 sm:px-6 py-2.5 sm:py-3.5 text-xs sm:text-sm font-medium uppercase tracking-widest bg-white/5 backdrop-blur-md shadow-lg"><i className="fa-brands fa-adobe mr-2 text-accent"></i>InDesign</div>
+                  <div className="about-tool-tag tool-tag border border-white/10 rounded-lg px-4 sm:px-6 py-2.5 sm:py-3.5 text-xs sm:text-sm font-medium uppercase tracking-widest bg-white/5 backdrop-blur-md shadow-lg"><i className="fa-solid fa-video mr-2 text-accent"></i>Premiere Pro</div>
+                  <div className="about-tool-tag tool-tag border border-white/10 rounded-lg px-4 sm:px-6 py-2.5 sm:py-3.5 text-xs sm:text-sm font-medium uppercase tracking-widest bg-white/5 backdrop-blur-md shadow-lg"><i className="fa-solid fa-clapperboard mr-2 text-accent"></i>CapCut</div>
+                  <div className="about-tool-tag tool-tag border border-white/10 rounded-lg px-4 sm:px-6 py-2.5 sm:py-3.5 text-xs sm:text-sm font-medium uppercase tracking-widest bg-white/5 backdrop-blur-md shadow-lg"><i className="fa-solid fa-pen-nib mr-2 text-accent"></i>Canva</div>
                 </div>
               </div>
             </div>
@@ -1157,7 +1276,7 @@ export default function App() {
       </section>
 
       {/* Experience Section */}
-      <section id="experience" className="py-32 px-6 overflow-hidden relative isolate">
+      <section id="experience" className="py-20 sm:py-28 lg:py-36 px-4 sm:px-6 lg:px-8 overflow-hidden relative isolate">
         {/* Timeline Background Video (Starting from Center to Right on desktop, full-screen on mobile) */}
         <div className="absolute top-0 right-0 left-0 lg:left-1/2 bottom-0 pointer-events-none overflow-hidden -z-10 opacity-15 lg:opacity-20 filter contrast-110 brightness-75 blur-[1px]">
           <video
@@ -1174,80 +1293,80 @@ export default function App() {
           <div className="absolute inset-0 bg-gradient-to-t from-bg via-transparent to-bg"></div>
         </div>
 
-        <div className="max-w-4xl mx-auto">
-          <h2 className="exp-title font-bebas text-5xl md:text-6xl tracking-wide text-center mb-20 opacity-0 transform translate-y-10">
+        <div className="max-w-4xl 2xl:max-w-5xl mx-auto">
+          <h2 className="exp-title font-bebas text-4xl sm:text-5xl md:text-6xl 2xl:text-7xl tracking-wide text-center mb-14 sm:mb-20 opacity-0 transform translate-y-10">
             Professional <span className="text-accent">Timeline</span>
           </h2>
 
-          <div className="relative pl-8 md:pl-0">
-            <div className="timeline-line md:left-1/2 md:-ml-[1px] exp-line scale-y-0 origin-top"></div>
+          <div className="relative">
+            <div className="timeline-line left-[11px] md:left-1/2 md:-ml-[1px] exp-line scale-y-0 origin-top"></div>
 
             {/* Exp 1 */}
-            <div className="exp-item relative mb-16 md:w-1/2 md:pr-16 text-left group opacity-0 translate-y-10">
-              <div className="timeline-dot md:left-auto md:right-[-12px] transition-transform duration-300 group-hover:scale-125 flex items-center justify-center">
+            <div className="exp-item relative mb-12 sm:mb-16 pl-10 md:pl-0 md:w-1/2 md:pr-12 lg:md:pr-16 text-left group opacity-0 translate-y-10">
+              <div className="timeline-dot left-0 md:left-auto md:right-[-12px] transition-transform duration-300 group-hover:scale-125 flex items-center justify-center">
                 <i className="fa-solid fa-circle-dot text-[8px] text-accent"></i>
               </div>
-              <div className="text-accent text-sm font-bold uppercase tracking-widest mb-2"><i className="fa-solid fa-calendar-days mr-2"></i>April 2025 – Present</div>
-              <h3 className="font-bebas text-3xl tracking-widest mb-1">Graphic Designer</h3>
-              <p className="text-gray-400 font-medium mb-4"><i className="fa-solid fa-building mr-2"></i>Inspite Technologies – Infopark Kochi</p>
-              <ul className="space-y-2 text-gray-500 font-light">
-                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Recognized with the Best Performer Award 2025 for outstanding creative performance and contribution to client projects.</li>
-                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Designed social media posters, digital advertisements, and marketing creatives for multiple clients.</li>
-                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Created brochures, hoarding designs, flyers, app banners, and promotional graphics for digital and print campaigns.</li>
-                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Edited reels, promotional videos, and advertisement content for social media platforms.</li>
-                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Collaborated with marketing teams to develop creative campaign concepts and visual strategies.</li>
-                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Delivered high-quality visual content within deadlines while ensuring client satisfaction.</li>
+              <div className="text-accent text-xs sm:text-sm font-bold uppercase tracking-widest mb-1.5 sm:mb-2"><i className="fa-solid fa-calendar-days mr-2"></i>April 2025 – Present</div>
+              <h3 className="font-bebas text-2xl sm:text-3xl tracking-widest mb-1">Graphic Designer</h3>
+              <p className="text-gray-400 font-medium text-sm sm:text-base mb-3 sm:mb-4"><i className="fa-solid fa-building mr-2"></i>Inspite Technologies – Infopark Kochi</p>
+              <ul className="space-y-2 text-gray-500 font-light text-xs sm:text-sm 2xl:text-base">
+                <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Recognized with the Best Performer Award 2025 for outstanding creative performance and contribution to client projects.</span></li>
+                <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Designed social media posters, digital advertisements, and marketing creatives for multiple clients.</span></li>
+                <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Created brochures, hoarding designs, flyers, app banners, and promotional graphics for digital and print campaigns.</span></li>
+                <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Edited reels, promotional videos, and advertisement content for social media platforms.</span></li>
+                <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Collaborated with marketing teams to develop creative campaign concepts and visual strategies.</span></li>
+                <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Delivered high-quality visual content within deadlines while ensuring client satisfaction.</span></li>
               </ul>
             </div>
 
             {/* Exp 2 */}
-            <div className="exp-item relative mb-16 md:w-1/2 md:ml-auto md:pl-16 text-left group opacity-0 translate-y-10">
-              <div className="timeline-dot md:left-[-12px] transition-transform duration-300 group-hover:scale-125 flex items-center justify-center">
+            <div className="exp-item relative mb-12 sm:mb-16 pl-10 md:w-1/2 md:ml-auto md:pl-12 lg:md:pl-16 text-left group opacity-0 translate-y-10">
+              <div className="timeline-dot left-0 md:left-[-12px] transition-transform duration-300 group-hover:scale-125 flex items-center justify-center">
                 <i className="fa-solid fa-circle-dot text-[8px] text-accent"></i>
               </div>
-              <div className="text-gray-400 text-sm font-bold uppercase tracking-widest mb-2"><i className="fa-solid fa-calendar-days mr-2"></i>3-Month Internship</div>
-              <h3 className="font-bebas text-3xl tracking-widest mb-1">Graphic Design Intern</h3>
-              <p className="text-gray-400 font-medium mb-4"><i className="fa-solid fa-building mr-2"></i>Zed Soft Tech, Malappuram, Tirur</p>
-              <ul className="space-y-2 text-gray-500 font-light">
-                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Assisted in creating social media creatives, promotional posters, and marketing materials.</li>
-                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Supported branding and visual design projects for businesses and startups.</li>
-                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Worked on video editing and digital content creation for social media campaigns.</li>
-                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Collaborated with senior designers to execute creative concepts and campaign visuals.</li>
+              <div className="text-gray-400 text-xs sm:text-sm font-bold uppercase tracking-widest mb-1.5 sm:mb-2"><i className="fa-solid fa-calendar-days mr-2"></i>3-Month Internship</div>
+              <h3 className="font-bebas text-2xl sm:text-3xl tracking-widest mb-1">Graphic Design Intern</h3>
+              <p className="text-gray-400 font-medium text-sm sm:text-base mb-3 sm:mb-4"><i className="fa-solid fa-building mr-2"></i>Zed Soft Tech, Malappuram, Tirur</p>
+              <ul className="space-y-2 text-gray-500 font-light text-xs sm:text-sm 2xl:text-base">
+                <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Assisted in creating social media creatives, promotional posters, and marketing materials.</span></li>
+                <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Supported branding and visual design projects for businesses and startups.</span></li>
+                <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Worked on video editing and digital content creation for social media campaigns.</span></li>
+                <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Collaborated with senior designers to execute creative concepts and campaign visuals.</span></li>
               </ul>
             </div>
 
             {/* Exp 3 */}
-            <div className="exp-item relative md:w-1/2 md:pr-16 text-left group opacity-0 translate-y-10">
-              <div className="timeline-dot md:left-auto md:right-[-12px] transition-transform duration-300 group-hover:scale-125 flex items-center justify-center">
+            <div className="exp-item relative pl-10 md:pl-0 md:w-1/2 md:pr-12 lg:md:pr-16 text-left group opacity-0 translate-y-10">
+              <div className="timeline-dot left-0 md:left-auto md:right-[-12px] transition-transform duration-300 group-hover:scale-125 flex items-center justify-center">
                 <i className="fa-solid fa-circle-dot text-[8px] text-accent"></i>
               </div>
-              <div className="text-accent text-sm font-bold uppercase tracking-widest mb-2"><i className="fa-solid fa-calendar-days mr-2"></i>Ongoing</div>
-              <h3 className="font-bebas text-3xl tracking-widest mb-1">Freelance Graphic Designer & Video Editor</h3>
-              <p className="text-gray-400 font-medium mb-4"><i className="fa-solid fa-laptop-house mr-2"></i>Independent</p>
-              <ul className="space-y-2 text-gray-500 font-light">
-                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Designed logos, social media creatives, brochures, banners, and promotional materials for various clients.</li>
-                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Created promotional videos, reels, and advertisement content for businesses and digital platforms.</li>
-                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Assisted startups and local brands in developing strong visual identities and creative marketing materials.</li>
-                <li className="flex items-start gap-3"><i class="fa-solid fa-caret-right text-accent mt-1"></i> Delivered modern and trend-focused design solutions tailored to client requirements.</li>
+              <div className="text-accent text-xs sm:text-sm font-bold uppercase tracking-widest mb-1.5 sm:mb-2"><i className="fa-solid fa-calendar-days mr-2"></i>Ongoing</div>
+              <h3 className="font-bebas text-2xl sm:text-3xl tracking-widest mb-1">Freelance Designer & Video Editor</h3>
+              <p className="text-gray-400 font-medium text-sm sm:text-base mb-3 sm:mb-4"><i className="fa-solid fa-laptop-house mr-2"></i>Independent</p>
+              <ul className="space-y-2 text-gray-500 font-light text-xs sm:text-sm 2xl:text-base">
+                <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Designed logos, social media creatives, brochures, banners, and promotional materials for various clients.</span></li>
+                <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Created promotional videos, reels, and advertisement content for businesses and digital platforms.</span></li>
+                <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Assisted startups and local brands in developing strong visual identities and creative marketing materials.</span></li>
+                <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Delivered modern and trend-focused design solutions tailored to client requirements.</span></li>
               </ul>
             </div>
           </div>
         </div>
       </section>
 
-      <section id="work" className="py-32 bg-[#0f0f0f]">
-        <div className="max-w-7xl mx-auto px-6 section-reveal">
-          <h2 className="font-bebas text-5xl md:text-6xl tracking-wide mb-8">
+      <section id="work" className="py-20 sm:py-28 lg:py-36 bg-[#0f0f0f]">
+        <div className="max-w-7xl 2xl:max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 section-reveal">
+          <h2 className="font-bebas text-4xl sm:text-5xl md:text-6xl 2xl:text-7xl tracking-wide mb-6 sm:mb-8">
             Selected <span className="text-accent">Works</span>
           </h2>
 
-          {/* Category Filters */}
-          <div className="flex flex-wrap gap-3 mb-12">
+          {/* Category Filters with smooth horizontal scroll on mobile */}
+          <div className="flex gap-2 sm:gap-3 overflow-x-auto no-scrollbar sm:flex-wrap pb-3 mb-8 sm:mb-12">
             {['ALL', 'POSTERS', 'AD CREATIVES', 'BROUCHERS', 'HORDINGS', 'LOGO DESIGN', 'BRANDING', 'BUSINESS CARDS & ID CARDS', 'VIDEOS & REELS', 'OTHERS'].map(cat => (
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`hoverable px-5 py-2 text-xs font-semibold tracking-wider uppercase border transition-all duration-300 rounded-full ${selectedCategory === cat
+                className={`shrink-0 hoverable px-4 sm:px-5 py-2 text-xs font-semibold tracking-wider uppercase border transition-all duration-300 rounded-full ${selectedCategory === cat
                     ? 'border-accent text-accent bg-accent/5'
                     : 'border-white/10 text-gray-400 hover:border-white hover:text-white'
                   }`}
@@ -1264,20 +1383,20 @@ export default function App() {
             {buildMarqueeLayout(works)}
           </div>
         ) : (
-          <div className="max-w-6xl mx-auto px-6">
+          <div className="max-w-7xl 2xl:max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
             {renderNormalGrid(works.filter(work => matchesCategory(work, selectedCategory)))}
           </div>
         )}
       </section>
 
       {/* Certifications Section */}
-      <section className="py-32 px-6">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="cert-title font-bebas text-5xl md:text-6xl tracking-wide mb-16 text-center opacity-0 translate-y-10">
+      <section className="py-20 sm:py-28 lg:py-36 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl 2xl:max-w-[1680px] mx-auto">
+          <h2 className="cert-title font-bebas text-4xl sm:text-5xl md:text-6xl 2xl:text-7xl tracking-wide mb-10 sm:mb-16 text-center opacity-0 translate-y-10">
             Education & <span className="text-accent">Credentials</span>
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
             <div
               onClick={() => setLightboxItem({
                 title: "Best Performer Award 2025",
@@ -1286,44 +1405,44 @@ export default function App() {
                 fileUrl: "/award.jpeg",
                 description: "Awarded for outstanding creative contributions and consistent excellence at Inspite Technologies, Infopark Kochi."
               })}
-              className="cert-item opacity-0 translate-y-10 glass-panel p-8 rounded-2xl flex items-center gap-6 hoverable group border-l-4 border-l-accentSec hover:-translate-y-2 transition-all duration-300 cursor-pointer"
+              className="cert-item opacity-0 translate-y-10 glass-panel p-5 sm:p-6 md:p-8 rounded-2xl flex items-start sm:items-center gap-4 sm:gap-6 hoverable group border-l-4 border-l-accentSec hover:-translate-y-2 transition-all duration-300 cursor-pointer"
             >
-              <div className="w-16 h-16 rounded-full bg-accentSec/10 flex items-center justify-center shrink-0">
-                <i className="fa-solid fa-trophy text-3xl text-accentSec group-hover:scale-110 transition-transform"></i>
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-accentSec/10 flex items-center justify-center shrink-0 mt-1 sm:mt-0">
+                <i className="fa-solid fa-trophy text-2xl sm:text-3xl text-accentSec group-hover:scale-110 transition-transform"></i>
               </div>
               <div>
-                <h4 className="font-bebas text-2xl tracking-widest text-accentSec mb-1">Best Performer Award 2025</h4>
-                <p className="text-gray-400 text-sm"><i className="fa-solid fa-building mr-2"></i>Inspite Technologies, Infopark Kochi</p>
+                <h4 className="font-bebas text-xl sm:text-2xl tracking-widest text-accentSec mb-1">Best Performer Award 2025</h4>
+                <p className="text-gray-400 text-xs sm:text-sm"><i className="fa-solid fa-building mr-2"></i>Inspite Technologies, Infopark Kochi</p>
               </div>
             </div>
 
-            <div className="cert-item opacity-0 translate-y-10 glass-panel p-8 rounded-2xl flex items-center gap-6 hoverable group border-l-4 border-l-white/10 hover:border-l-accent hover:-translate-y-2 transition-all duration-300">
-              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center shrink-0">
-                <i className="fa-solid fa-certificate text-3xl text-white group-hover:text-accent transition-colors"></i>
+            <div className="cert-item opacity-0 translate-y-10 glass-panel p-5 sm:p-6 md:p-8 rounded-2xl flex items-start sm:items-center gap-4 sm:gap-6 hoverable group border-l-4 border-l-white/10 hover:border-l-accent hover:-translate-y-2 transition-all duration-300">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-white/5 flex items-center justify-center shrink-0 mt-1 sm:mt-0">
+                <i className="fa-solid fa-certificate text-2xl sm:text-3xl text-white group-hover:text-accent transition-colors"></i>
               </div>
               <div>
-                <h4 className="font-bebas text-2xl tracking-widest mb-1 group-hover:text-accent transition-colors">Graphic Designing & Video Editing</h4>
-                <p className="text-gray-400 text-sm"><i className="fa-solid fa-certificate mr-2"></i>Avoda Edutech Private Limited, Kochi (2024)</p>
+                <h4 className="font-bebas text-xl sm:text-2xl tracking-widest mb-1 group-hover:text-accent transition-colors">Graphic Designing & Video Editing</h4>
+                <p className="text-gray-400 text-xs sm:text-sm"><i className="fa-solid fa-certificate mr-2"></i>Avoda Edutech Private Limited, Kochi (2024)</p>
               </div>
             </div>
 
-            <div className="cert-item opacity-0 translate-y-10 glass-panel p-8 rounded-2xl flex items-center gap-6 hoverable group border-l-4 border-l-white/10 hover:border-l-accent hover:-translate-y-2 transition-all duration-300">
-              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center shrink-0">
-                <i className="fa-solid fa-building-columns text-3xl text-white group-hover:text-accent transition-colors"></i>
+            <div className="cert-item opacity-0 translate-y-10 glass-panel p-5 sm:p-6 md:p-8 rounded-2xl flex items-start sm:items-center gap-4 sm:gap-6 hoverable group border-l-4 border-l-white/10 hover:border-l-accent hover:-translate-y-2 transition-all duration-300">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-white/5 flex items-center justify-center shrink-0 mt-1 sm:mt-0">
+                <i className="fa-solid fa-building-columns text-2xl sm:text-3xl text-white group-hover:text-accent transition-colors"></i>
               </div>
               <div>
-                <h4 className="font-bebas text-2xl tracking-widest mb-1 group-hover:text-accent transition-colors">Higher Secondary (Plus Two)</h4>
-                <p className="text-gray-400 text-sm"><i className="fa-solid fa-award mr-2"></i>Board of Higher Secondary Examinations, Kerala (2018)</p>
+                <h4 className="font-bebas text-xl sm:text-2xl tracking-widest mb-1 group-hover:text-accent transition-colors">Higher Secondary (Plus Two)</h4>
+                <p className="text-gray-400 text-xs sm:text-sm"><i className="fa-solid fa-award mr-2"></i>Board of Higher Secondary Examinations, Kerala (2018)</p>
               </div>
             </div>
 
-            <div className="cert-item opacity-0 translate-y-10 glass-panel p-8 rounded-2xl flex items-center gap-6 hoverable group border-l-4 border-l-white/10 hover:border-l-accent hover:-translate-y-2 transition-all duration-300">
-              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center shrink-0">
-                <i className="fa-solid fa-book-open text-3xl text-white group-hover:text-accent transition-colors"></i>
+            <div className="cert-item opacity-0 translate-y-10 glass-panel p-5 sm:p-6 md:p-8 rounded-2xl flex items-start sm:items-center gap-4 sm:gap-6 hoverable group border-l-4 border-l-white/10 hover:border-l-accent hover:-translate-y-2 transition-all duration-300">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-white/5 flex items-center justify-center shrink-0 mt-1 sm:mt-0">
+                <i className="fa-solid fa-book-open text-2xl sm:text-3xl text-white group-hover:text-accent transition-colors"></i>
               </div>
               <div>
-                <h4 className="font-bebas text-2xl tracking-widest mb-1 group-hover:text-accent transition-colors">SSLC</h4>
-                <p className="text-gray-400 text-sm"><i className="fa-solid fa-school mr-2"></i>Board of Public Examination, Kerala (2016)</p>
+                <h4 className="font-bebas text-xl sm:text-2xl tracking-widest mb-1 group-hover:text-accent transition-colors">SSLC</h4>
+                <p className="text-gray-400 text-xs sm:text-sm"><i className="fa-solid fa-school mr-2"></i>Board of Public Examination, Kerala (2016)</p>
               </div>
             </div>
           </div>
@@ -1331,63 +1450,90 @@ export default function App() {
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-40 px-6 bg-[#080808] border-t border-white/5 relative overflow-hidden">
-        <div className="max-w-4xl mx-auto text-center section-reveal relative z-10">
-          <h2 className="font-bebas text-6xl md:text-8xl tracking-wide mb-6">
-            LET'S WORK <span className="text-accent">TOGETHER</span>
+      <section id="contact" className="py-16 sm:py-24 md:py-32 lg:py-40 px-4 sm:px-6 lg:px-8 bg-[#080808] border-t border-white/5 relative overflow-hidden">
+        <div className="max-w-6xl 2xl:max-w-[1680px] mx-auto text-center section-reveal relative z-10 px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
+          <h2 className="font-bebas text-4xl sm:text-5xl md:text-6xl lg:text-7xl 2xl:text-8xl tracking-wide mb-3 sm:mb-5 leading-tight">
+            LET'S WORK <span className="text-accent block sm:inline">TOGETHER</span>
           </h2>
-          <p className="text-gray-400 font-light text-lg md:text-xl mb-16">
+          <p className="text-gray-400 font-light text-sm sm:text-base md:text-lg mb-8 sm:mb-14 max-w-2xl mx-auto px-2">
             Ready to elevate your visual identity? <br />
-            <span className="text-sm mt-2 block text-gray-500"><i className="fa-solid fa-earth-asia mr-2"></i>Speaking English, Malayalam & Tamil</span>
+            <span className="text-xs sm:text-sm mt-1.5 block text-gray-500"><i className="fa-solid fa-earth-asia mr-2"></i>Speaking English, Malayalam & Tamil</span>
           </p>
 
-          <div className="flex flex-col md:flex-row flex-wrap justify-center gap-12 md:gap-16 lg:gap-20 mb-16">
-            <div className="space-y-4 hoverable group cursor-pointer">
-              <div className="w-16 h-16 rounded-full glass-panel mx-auto flex items-center justify-center group-hover:bg-accent/20 transition-all duration-300">
-                <i className="fa-solid fa-envelope text-accent text-2xl group-hover:scale-125 transition-transform duration-300"></i>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8 sm:mb-14 text-left sm:text-center">
+            <a
+              href="mailto:jithinkrishnan1000@gmail.com"
+              className="hoverable group cursor-pointer flex sm:flex-col items-center gap-3.5 sm:gap-3 p-3.5 sm:p-5 rounded-2xl glass-panel border border-white/5 hover:border-accent/40 transition-all duration-300"
+            >
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-accent/10 border border-accent/20 sm:mx-auto flex items-center justify-center group-hover:bg-accent/20 group-hover:scale-110 transition-all duration-300 shrink-0">
+                <i className="fa-solid fa-envelope text-accent text-lg sm:text-2xl transition-transform duration-300"></i>
               </div>
-              <div className="text-sm font-bold uppercase tracking-widest text-gray-500">Email</div>
-              <div className="font-medium text-lg">jithinkrishnan1000@gmail.com</div>
+              <div className="min-w-0 flex-1 sm:flex-initial">
+                <div className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-gray-400 mb-0.5">Email</div>
+                <div className="font-medium text-xs sm:text-sm md:text-base break-all group-hover:text-accent transition-colors">jithinkrishnan1000@gmail.com</div>
+              </div>
+            </a>
+
+            <a
+              href="tel:+918075773025"
+              className="hoverable group cursor-pointer flex sm:flex-col items-center gap-3.5 sm:gap-3 p-3.5 sm:p-5 rounded-2xl glass-panel border border-white/5 hover:border-accent/40 transition-all duration-300"
+            >
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-accent/10 border border-accent/20 sm:mx-auto flex items-center justify-center group-hover:bg-accent/20 group-hover:scale-110 transition-all duration-300 shrink-0">
+                <i className="fa-solid fa-phone text-accent text-lg sm:text-2xl transition-transform duration-300"></i>
+              </div>
+              <div className="min-w-0 flex-1 sm:flex-initial">
+                <div className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-gray-400 mb-0.5">Phone</div>
+                <div className="font-medium text-xs sm:text-sm md:text-base group-hover:text-accent transition-colors">+91 8075773025</div>
+              </div>
+            </a>
+
+            <div
+              className="hoverable group flex sm:flex-col items-center gap-3.5 sm:gap-3 p-3.5 sm:p-5 rounded-2xl glass-panel border border-white/5"
+            >
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-accent/10 border border-accent/20 sm:mx-auto flex items-center justify-center shrink-0">
+                <i className="fa-solid fa-location-dot text-accent text-lg sm:text-2xl transition-transform duration-300"></i>
+              </div>
+              <div className="min-w-0 flex-1 sm:flex-initial">
+                <div className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-gray-400 mb-0.5">Location</div>
+                <div className="font-medium text-xs sm:text-sm md:text-base text-gray-200">Palakkad, Kerala</div>
+              </div>
             </div>
-            <div className="space-y-4 hoverable group cursor-pointer">
-              <div className="w-16 h-16 rounded-full glass-panel mx-auto flex items-center justify-center group-hover:bg-accent/20 transition-all duration-300">
-                <i className="fa-solid fa-phone text-accent text-2xl group-hover:scale-125 transition-transform duration-300"></i>
+
+            <a
+              href="https://www.instagram.com/gra_phicwaves?igsh=aGtiMDM5ZWVuejBr&utm_source=ig_contact_invite"
+              target="_blank"
+              rel="noreferrer"
+              className="hoverable group cursor-pointer flex sm:flex-col items-center gap-3.5 sm:gap-3 p-3.5 sm:p-5 rounded-2xl glass-panel border border-white/5 hover:border-accent/40 transition-all duration-300"
+            >
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-accent/10 border border-accent/20 sm:mx-auto flex items-center justify-center group-hover:bg-accent/20 group-hover:scale-110 transition-all duration-300 shrink-0">
+                <i className="fa-brands fa-instagram text-accent text-lg sm:text-2xl transition-transform duration-300"></i>
               </div>
-              <div className="text-sm font-bold uppercase tracking-widest text-gray-500">Phone</div>
-              <div className="font-medium text-lg">+91 8075773025</div>
-            </div>
-            <div className="space-y-4 hoverable group cursor-pointer">
-              <div className="w-16 h-16 rounded-full glass-panel mx-auto flex items-center justify-center group-hover:bg-accent/20 transition-all duration-300">
-                <i className="fa-solid fa-location-dot text-accent text-2xl group-hover:scale-125 transition-transform duration-300"></i>
+              <div className="min-w-0 flex-1 sm:flex-initial">
+                <div className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-gray-400 mb-0.5">Instagram</div>
+                <div className="font-medium text-xs sm:text-sm md:text-base hover:text-accent transition-colors">@gra_phicwaves</div>
               </div>
-              <div className="text-sm font-bold uppercase tracking-widest text-gray-500">Location</div>
-              <div className="font-medium text-lg">Palakkad, Kerala</div>
-            </div>
-            <a href="https://www.instagram.com/gra_phicwaves?igsh=aGtiMDM5ZWVuejBr&utm_source=ig_contact_invite" target="_blank" rel="noreferrer" className="space-y-4 hoverable group cursor-pointer block">
-              <div className="w-16 h-16 rounded-full glass-panel mx-auto flex items-center justify-center group-hover:bg-accent/20 transition-all duration-300">
-                <i className="fa-brands fa-instagram text-accent text-2xl group-hover:scale-125 transition-transform duration-300"></i>
-              </div>
-              <div className="text-sm font-bold uppercase tracking-widest text-gray-500">Instagram</div>
-              <div className="font-medium text-lg hover:text-accent transition-colors">@gra_phicwaves</div>
             </a>
           </div>
 
-          <a href="mailto:jithinkrishnan1000@gmail.com" className="inline-flex items-center gap-4 bg-white text-bg px-10 py-5 font-bold uppercase tracking-widest hover:bg-accent hover:text-white transition-colors duration-300 hoverable rounded-full">
-            Send a Message <i className="fa-solid fa-arrow-right text-xl"></i>
+          <a
+            href="mailto:jithinkrishnan1000@gmail.com"
+            className="inline-flex items-center justify-center gap-3 w-full sm:w-auto bg-white text-bg px-8 sm:px-10 py-3.5 sm:py-4 font-bold uppercase tracking-widest hover:bg-accent hover:text-white transition-colors duration-300 hoverable rounded-full text-xs sm:text-sm shadow-xl"
+          >
+            Send a Message <i className="fa-solid fa-arrow-right text-base sm:text-lg"></i>
           </a>
         </div>
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 bg-accent/10 rounded-full blur-[120px] -z-0"></div>
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-96 bg-accent/10 rounded-full blur-[120px] pointer-events-none -z-0"></div>
       </section>
 
       {/* Footer */}
-      <footer className="py-10 px-6 border-t border-white/5 text-center md:text-left flex flex-col md:flex-row justify-between items-center max-w-7xl mx-auto text-sm text-gray-500 uppercase tracking-widest font-medium">
-        <div className="font-bebas text-2xl tracking-wider text-white mb-4 md:mb-0">
+      <footer className="py-8 sm:py-10 px-4 sm:px-6 lg:px-8 border-t border-white/5 text-center md:text-left flex flex-col md:flex-row justify-between items-center max-w-7xl 2xl:max-w-[1680px] mx-auto text-xs sm:text-sm text-gray-500 uppercase tracking-widest font-medium gap-3 sm:gap-4">
+        <div className="font-bebas text-xl sm:text-2xl tracking-wider text-white">
           J<span className="text-accent">.</span>K
         </div>
         <div>
           © 2026 JITHIN KRISHNAN. DESIGNED WITH PRECISION.
         </div>
-        <div className="mt-4 md:mt-0">
+        <div>
           PALAKKAD, KERALA
         </div>
       </footer>
@@ -1399,14 +1545,14 @@ export default function App() {
 
       {/* Admin Upload Modal */}
       {isAdminOpen && (
-        <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
-          <div className="glass-panel w-full max-w-2xl rounded-3xl p-8 max-h-[90vh] overflow-y-auto border border-white/10 shadow-2xl relative">
+        <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/80 backdrop-blur-md p-3 sm:p-4">
+          <div className="glass-panel w-full max-w-2xl rounded-2xl sm:rounded-3xl p-5 sm:p-8 max-h-[92vh] overflow-y-auto border border-white/10 shadow-2xl relative">
             <button
               onClick={() => {
                 setIsAdminOpen(false);
                 handleCancelEdit();
               }}
-              className="absolute top-6 right-6 text-gray-400 hover:text-white text-xl hoverable"
+              className="absolute top-4 right-4 sm:top-6 sm:right-6 text-gray-400 hover:text-white text-lg sm:text-xl hoverable w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-full bg-white/5"
             >
               <i className="fa-solid fa-xmark"></i>
             </button>
@@ -1577,11 +1723,11 @@ export default function App() {
                         />
                       </div>
 
-                      <div className="pt-4 flex gap-4">
+                      <div className="pt-4 flex flex-col sm:flex-row gap-3 sm:gap-4">
                         <button
                           type="submit"
                           disabled={isSubmitting}
-                          className="px-8 py-4 bg-accent text-white font-medium hover:bg-white hover:text-bg transition-colors duration-300 flex-1 uppercase tracking-widest text-sm font-semibold"
+                          className="px-6 sm:px-8 py-3 sm:py-4 bg-accent text-white font-medium hover:bg-white hover:text-bg transition-colors duration-300 flex-1 uppercase tracking-widest text-xs sm:text-sm font-semibold rounded-lg sm:rounded-none"
                         >
                           {isSubmitting ? 'Saving...' : editingId ? 'Update Project' : 'Publish Project'}
                         </button>
@@ -1589,7 +1735,7 @@ export default function App() {
                           <button
                             type="button"
                             onClick={handleCancelEdit}
-                            className="px-8 py-4 bg-white/10 hover:bg-white/20 text-white font-medium transition-colors duration-300 uppercase tracking-widest text-sm"
+                            className="px-6 sm:px-8 py-3 sm:py-4 bg-white/10 hover:bg-white/20 text-white font-medium transition-colors duration-300 uppercase tracking-widest text-xs sm:text-sm rounded-lg sm:rounded-none"
                           >
                             Cancel Edit
                           </button>
@@ -1600,7 +1746,7 @@ export default function App() {
                             setIsAdminOpen(false);
                             handleCancelEdit();
                           }}
-                          className="px-8 py-4 border border-white/20 hover:border-white text-white font-medium transition-colors duration-300 uppercase tracking-widest text-sm"
+                          className="px-6 sm:px-8 py-3 sm:py-4 border border-white/20 hover:border-white text-white font-medium transition-colors duration-300 uppercase tracking-widest text-xs sm:text-sm rounded-lg sm:rounded-none"
                         >
                           Close
                         </button>
@@ -1635,11 +1781,11 @@ export default function App() {
                       />
                     </div>
 
-                    <div className="pt-4 flex gap-4">
+                    <div className="pt-4 flex flex-col sm:flex-row gap-3 sm:gap-4">
                       <button
                         type="submit"
                         disabled={isSubmittingCv}
-                        className="px-8 py-4 bg-accent text-white font-medium hover:bg-white hover:text-bg transition-colors duration-300 flex-1 uppercase tracking-widest text-sm font-semibold"
+                        className="px-6 sm:px-8 py-3 sm:py-4 bg-accent text-white font-medium hover:bg-white hover:text-bg transition-colors duration-300 flex-1 uppercase tracking-widest text-xs sm:text-sm font-semibold rounded-lg sm:rounded-none"
                       >
                         {isSubmittingCv ? 'Saving CV...' : 'Update CV'}
                       </button>
@@ -1648,7 +1794,7 @@ export default function App() {
                         onClick={() => {
                           setIsAdminOpen(false);
                         }}
-                        className="px-8 py-4 border border-white/20 hover:border-white text-white font-medium transition-colors duration-300 uppercase tracking-widest text-sm"
+                        className="px-6 sm:px-8 py-3 sm:py-4 border border-white/20 hover:border-white text-white font-medium transition-colors duration-300 uppercase tracking-widest text-xs sm:text-sm rounded-lg sm:rounded-none"
                       >
                         Close
                       </button>
@@ -1662,36 +1808,37 @@ export default function App() {
       )}
       {/* Lightbox Modal for viewing work */}
       {lightboxItem && (
-        <div className="fixed inset-0 z-[10002] flex items-center justify-center bg-black/95 p-4 md:p-8 backdrop-blur-md">
+        <div className="fixed inset-0 z-[10002] flex items-center justify-center bg-black/95 p-4 sm:p-6 md:p-8 backdrop-blur-md overflow-y-auto">
           <button
             onClick={() => setLightboxItem(null)}
-            className="absolute top-6 right-6 text-gray-400 hover:text-white text-3xl hoverable z-50 focus:outline-none"
+            className="fixed top-4 right-4 sm:top-6 sm:right-6 text-gray-300 hover:text-white w-10 h-10 sm:w-12 sm:h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-xl sm:text-2xl hoverable z-50 focus:outline-none transition-colors"
+            aria-label="Close modal"
           >
             <i className="fa-solid fa-xmark"></i>
           </button>
 
-          <div className="max-w-5xl w-full flex flex-col items-center justify-center gap-4 text-center">
-            <div className="w-full max-h-[75vh] flex items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black/50">
+          <div className="max-w-5xl w-full flex flex-col items-center justify-center gap-4 text-center my-auto py-8">
+            <div className="w-full max-h-[60vh] sm:max-h-[70vh] md:max-h-[75vh] flex items-center justify-center overflow-hidden rounded-xl border border-white/10 bg-black/50">
               {lightboxItem.type === 'doc' ? (
                 <iframe
                   src={lightboxItem.fileUrl && lightboxItem.fileUrl.startsWith('http')
                     ? `https://docs.google.com/gview?url=${encodeURIComponent(lightboxItem.fileUrl)}&embedded=true`
                     : lightboxItem.fileData || lightboxItem.fileUrl}
-                  className="w-[90vw] md:w-[70vw] h-[70vh] rounded-lg bg-white"
+                  className="w-[90vw] md:w-[70vw] h-[55vh] sm:h-[65vh] rounded-lg bg-white"
                   title={lightboxItem.title}
                 />
               ) : lightboxItem.type === 'video' ? (
                 (lightboxItem.fileData || lightboxItem.fileUrl).includes('youtube.com') || (lightboxItem.fileData || lightboxItem.fileUrl).includes('youtu.be') || (lightboxItem.fileData || lightboxItem.fileUrl).includes('vimeo') ? (
                   <iframe
                     src={lightboxItem.fileData || lightboxItem.fileUrl}
-                    className="w-[90vw] md:w-[70vw] h-[50vh] rounded-lg"
+                    className="w-[90vw] md:w-[70vw] h-[40vh] sm:h-[50vh] rounded-lg"
                     title={lightboxItem.title}
                     allowFullScreen
                   />
                 ) : (
                   <video
                     src={lightboxItem.fileData || lightboxItem.fileUrl}
-                    className="max-h-[70vh] rounded-lg"
+                    className="max-h-[60vh] sm:max-h-[70vh] rounded-lg max-w-full"
                     controls
                     autoPlay
                   />
@@ -1700,7 +1847,7 @@ export default function App() {
                 <img
                   src={lightboxItem.fileData || lightboxItem.fileUrl}
                   alt={lightboxItem.title}
-                  className="max-h-[75vh] object-contain rounded-lg"
+                  className="max-h-[60vh] sm:max-h-[75vh] object-contain rounded-lg"
                 />
               )}
             </div>
@@ -1709,21 +1856,21 @@ export default function App() {
               <span className="text-accent text-xs font-bold uppercase tracking-widest px-3 py-1 border border-accent/35 rounded-full bg-accent/5">
                 {lightboxItem.category}
               </span>
-              <h3 className="font-bebas text-3xl tracking-wide text-white mt-4">{lightboxItem.title}</h3>
+              <h3 className="font-bebas text-2xl sm:text-3xl tracking-wide text-white mt-3 sm:mt-4">{lightboxItem.title}</h3>
               {lightboxItem.type === 'doc' && (
                 <div className="mt-4">
                   <a
                     href={lightboxItem.fileUrl || lightboxItem.fileData}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-2 hoverable text-xs font-semibold px-6 py-3 bg-accent text-white hover:bg-white hover:text-bg transition-all duration-300 rounded-full"
+                    className="inline-flex items-center gap-2 hoverable text-xs font-semibold px-5 sm:px-6 py-2.5 sm:py-3 bg-accent text-white hover:bg-white hover:text-bg transition-all duration-300 rounded-full"
                   >
                     <i className="fa-solid fa-file-arrow-down text-sm"></i> Open / Download PDF Brochure
                   </a>
                 </div>
               )}
               {lightboxItem.description && (
-                <p className="text-gray-400 text-sm font-light leading-relaxed mt-2">
+                <p className="text-gray-400 text-xs sm:text-sm font-light leading-relaxed mt-2">
                   {lightboxItem.description}
                 </p>
               )}

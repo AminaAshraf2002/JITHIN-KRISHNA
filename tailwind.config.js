@@ -14,6 +14,9 @@ export default {
       fontFamily: {
         bebas: ['"Bebas Neue"', 'sans-serif'],
         outfit: ['"Outfit"', 'sans-serif'],
+      },
+      screens: {
+        '3xl': '1920px',
       }
     },
   },

@@ -26,6 +26,13 @@
 }
 
 /* Custom Cursor */
+@media (hover: none) or (pointer: coarse) {
+    .cursor-dot,
+    .cursor-ring {
+        display: none !important;
+    }
+}
+
 .cursor-dot,
 .cursor-ring {
     position: fixed;
@@ -141,13 +148,27 @@ nav {
 .image-frame::after {
     content: '';
     position: absolute;
-    top: 30px;
-    left: 30px;
+    top: 14px;
+    left: 14px;
     width: 100%;
     height: 100%;
     border: 2px solid #FF3C00;
     z-index: -1;
     transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+@media (min-width: 768px) {
+    .image-frame::after {
+        top: 25px;
+        left: 25px;
+    }
+}
+
+@media (min-width: 1280px) {
+    .image-frame::after {
+        top: 30px;
+        left: 30px;
+    }
 }
 
 .image-frame:hover::after {
@@ -366,17 +387,13 @@ nav {
 /* Extra small phones */
 @media (max-width: 480px) {
     html {
-        font-size: 12px;
+        font-size: 14px;
     }
     .preloader-letters {
         font-size: 5rem;
     }
     .watermark {
         font-size: 30vw;
-    }
-    .hero-content h1 {
-        font-size: 3.8rem;
-        line-height: 0.9;
     }
     .glass-panel {
         padding: 1.5rem !important;
@@ -385,24 +402,23 @@ nav {
         font-size: 1.3rem;
     }
     .portfolio-card {
-        height: 280px;
+        height: 220px;
+    }
+    .portfolio-overlay {
+        padding: 14px;
     }
 }
 
 /* Large phones */
 @media (min-width: 481px) and (max-width: 767px) {
     html {
-        font-size: 13.5px;
+        font-size: 15px;
     }
     .preloader-letters {
         font-size: 6.5rem;
     }
     .watermark {
         font-size: 28vw;
-    }
-    .hero-content h1 {
-        font-size: 4.5rem;
-        line-height: 0.9;
     }
     .glass-panel {
         padding: 2rem !important;
@@ -415,16 +431,13 @@ nav {
 /* Tablets */
 @media (min-width: 768px) and (max-width: 1023px) {
     html {
-        font-size: 14.5px;
+        font-size: 15px;
     }
     .preloader-letters {
         font-size: 8rem;
     }
     .watermark {
         font-size: 26vw;
-    }
-    .hero-content h1 {
-        font-size: 5.5rem;
     }
 }
 
@@ -441,36 +454,68 @@ nav {
 /* Laptop */
 @media (min-width: 1280px) and (max-width: 1439px) {
     html {
-        font-size: 12.8px;
+        font-size: 15px;
     }
     .watermark {
         font-size: 22vw;
     }
 }
 
-/* Desktop */
+/* Desktop 1440p */
 @media (min-width: 1440px) and (max-width: 1919px) {
     html {
-        font-size: 13.6px;
+        font-size: 16px;
     }
     .watermark {
         font-size: 20vw;
     }
 }
 
-/* 4K */
+/* Full HD 1920 */
 @media (min-width: 1920px) {
     html {
-        font-size: 22px;
+        font-size: 18px;
+    }
+    .watermark {
+        font-size: 20vw;
+    }
+    .max-w-7xl {
+        max-width: 1680px;
+    }
+    .max-w-6xl {
+        max-width: 1540px;
+    }
+    .max-w-5xl {
+        max-width: 1400px;
+    }
+    .max-w-4xl {
+        max-width: 1200px;
+    }
+}
+
+/* 2K / QHD (2560px+) */
+@media (min-width: 2560px) {
+    html {
+        font-size: 20px;
     }
     .watermark {
         font-size: 18vw;
     }
     .max-w-7xl {
-        max-width: 1600px;
+        max-width: 2100px;
     }
-    .max-w-4xl {
-        max-width: 1100px;
+}
+
+/* 4K (3840px+) */
+@media (min-width: 3840px) {
+    html {
+        font-size: 24px;
+    }
+    .watermark {
+        font-size: 16vw;
+    }
+    .max-w-7xl {
+        max-width: 2800px;
     }
 }
 
@@ -571,6 +616,18 @@ nav {
 }
 
 /* Responsive */
+@media (min-width: 1920px) {
+  .gallery-marquee-wrapper {
+    height: 700px;
+  }
+  .gallery-marquee-item.tall {
+    width: 360px;
+  }
+  .gallery-marquee-item.short {
+    width: 360px;
+  }
+}
+
 @media (max-width: 1024px) {
   .gallery-marquee-wrapper {
     height: 520px;
