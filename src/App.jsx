@@ -1052,8 +1052,8 @@ export default function App() {
             </div>
 
             <div className="mt-3 sm:mt-4 md:mt-0 space-y-3 sm:space-y-4 max-w-xl 2xl:max-w-2xl">
-              <h2 className="text-base sm:text-lg md:text-lg lg:text-xl xl:text-2xl 2xl:text-3xl font-light text-gray-300">Graphic Designer · Video Editor</h2>
-              <p className="text-gray-400 leading-relaxed font-light text-xs sm:text-sm md:text-sm lg:text-sm xl:text-base 2xl:text-lg 3xl:text-xl">
+              <h2 className="text-lg sm:text-xl md:text-xl lg:text-xl xl:text-2xl 2xl:text-3xl font-light text-gray-300">Graphic Designer · Video Editor</h2>
+              <p className="text-gray-300 leading-relaxed font-light text-sm sm:text-base md:text-sm lg:text-sm xl:text-base 2xl:text-lg 3xl:text-xl">
                 Creative and detail-oriented Graphic Designer with 1+ year of professional experience. Based in Palakkad, Kerala, specializing in social media creatives, brochures, branding materials, and promotional video editing.
               </p>
             </div>
@@ -1293,7 +1293,7 @@ export default function App() {
               <div className="text-accent text-xs sm:text-sm font-bold uppercase tracking-widest mb-1.5 sm:mb-2"><i className="fa-solid fa-calendar-days mr-2"></i>April 2025 – Present</div>
               <h3 className="font-bebas text-2xl sm:text-3xl tracking-widest mb-1">Graphic Designer</h3>
               <p className="text-gray-400 font-medium text-sm sm:text-base mb-3 sm:mb-4"><i className="fa-solid fa-building mr-2"></i>Inspite Technologies – Infopark Kochi</p>
-              <ul className="space-y-2 text-gray-500 font-light text-xs sm:text-sm 2xl:text-base">
+              <ul className="space-y-2.5 sm:space-y-2 text-gray-300 font-light text-sm sm:text-sm 2xl:text-base">
                 <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Recognized with the Best Performer Award 2025 for outstanding creative performance and contribution to client projects.</span></li>
                 <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Designed social media posters, digital advertisements, and marketing creatives for multiple clients.</span></li>
                 <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Created brochures, hoarding designs, flyers, app banners, and promotional graphics for digital and print campaigns.</span></li>
@@ -1311,7 +1311,7 @@ export default function App() {
               <div className="text-gray-400 text-xs sm:text-sm font-bold uppercase tracking-widest mb-1.5 sm:mb-2"><i className="fa-solid fa-calendar-days mr-2"></i>3-Month Internship</div>
               <h3 className="font-bebas text-2xl sm:text-3xl tracking-widest mb-1">Graphic Design Intern</h3>
               <p className="text-gray-400 font-medium text-sm sm:text-base mb-3 sm:mb-4"><i className="fa-solid fa-building mr-2"></i>Zed Soft Tech, Malappuram, Tirur</p>
-              <ul className="space-y-2 text-gray-500 font-light text-xs sm:text-sm 2xl:text-base">
+              <ul className="space-y-2.5 sm:space-y-2 text-gray-300 font-light text-sm sm:text-sm 2xl:text-base">
                 <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Assisted in creating social media creatives, promotional posters, and marketing materials.</span></li>
                 <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Supported branding and visual design projects for businesses and startups.</span></li>
                 <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Worked on video editing and digital content creation for social media campaigns.</span></li>
@@ -1327,7 +1327,7 @@ export default function App() {
               <div className="text-accent text-xs sm:text-sm font-bold uppercase tracking-widest mb-1.5 sm:mb-2"><i className="fa-solid fa-calendar-days mr-2"></i>Ongoing</div>
               <h3 className="font-bebas text-2xl sm:text-3xl tracking-widest mb-1">Freelance Designer & Video Editor</h3>
               <p className="text-gray-400 font-medium text-sm sm:text-base mb-3 sm:mb-4"><i className="fa-solid fa-laptop-house mr-2"></i>Independent</p>
-              <ul className="space-y-2 text-gray-500 font-light text-xs sm:text-sm 2xl:text-base">
+              <ul className="space-y-2.5 sm:space-y-2 text-gray-300 font-light text-sm sm:text-sm 2xl:text-base">
                 <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Designed logos, social media creatives, brochures, banners, and promotional materials for various clients.</span></li>
                 <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Created promotional videos, reels, and advertisement content for businesses and digital platforms.</span></li>
                 <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Assisted startups and local brands in developing strong visual identities and creative marketing materials.</span></li>
