@@ -71,12 +71,14 @@ export default function App() {
       const res = await fetch(`${API_BASE}/api/cv`);
       if (res.ok) {
         const data = await res.json();
-        if (data.fileData) {
+        if (data.fileData && data.fileData.startsWith('data:')) {
           setCvUrl(base64ToBlobUrl(data.fileData));
           setCvFileData(data.fileData);
-        } else if (data.fileUrl) {
+        } else if (data.fileUrl && !data.fileUrl.includes('cloudinary.com')) {
           setCvUrl(data.fileUrl);
           setCvFileUrl(data.fileUrl);
+        } else {
+          setCvUrl(`${API_BASE}/api/cv/view`);
         }
       }
     } catch (err) {
@@ -108,27 +110,7 @@ export default function App() {
       let finalFileUrl = cvFileUrl;
       let finalFileData = cvFileData || '';
 
-      if (cvFileData && cvFileData.startsWith('data:')) {
-        try {
-          // Upload to Cloudinary using raw resource type for authentic PDF binary delivery
-          const formData = new FormData();
-          formData.append('file', cvFileData);
-          formData.append('upload_preset', 'portfolio_preset');
-
-          const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/xu6e72nr/raw/upload`, {
-            method: 'POST',
-            body: formData
-          });
-
-          if (uploadRes.ok) {
-            const uploadData = await uploadRes.json();
-            finalFileUrl = uploadData.secure_url;
-          }
-        } catch (uploadErr) {
-          console.warn("Cloudinary raw CV upload failed, using database storage:", uploadErr);
-        }
-      }
-
+      // Direct, reliable MongoDB storage for the PDF: eliminates Cloudinary 401 ACL blocks
       const res = await fetch(`${API_BASE}/api/cv`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -137,10 +119,12 @@ export default function App() {
 
       if (res.ok) {
         const data = await res.json();
-        if (data.fileData) {
+        if (data.fileData && data.fileData.startsWith('data:')) {
           setCvUrl(base64ToBlobUrl(data.fileData));
-        } else if (data.fileUrl) {
+        } else if (data.fileUrl && !data.fileUrl.includes('cloudinary.com')) {
           setCvUrl(data.fileUrl);
+        } else {
+          setCvUrl(`${API_BASE}/api/cv/view`);
         }
         alert('CV updated successfully!');
         setIsAdminOpen(false);

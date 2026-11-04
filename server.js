@@ -169,16 +169,42 @@ app.get('/api/cv', async (req, res) => {
   }
 });
 
+// Direct PDF streaming endpoint for CV viewing in browser (bypasses Cloudinary 401 ACL restrictions)
+app.get('/api/cv/view', async (req, res) => {
+  try {
+    const cvRecord = await CV.findOne().sort({ updatedAt: -1 });
+    if (!cvRecord) {
+      return res.redirect('/cv.pdf');
+    }
+
+    if (cvRecord.fileData && cvRecord.fileData.startsWith('data:')) {
+      const base64Content = cvRecord.fileData.split(';base64,')[1] || cvRecord.fileData;
+      const pdfBuffer = Buffer.from(base64Content, 'base64');
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="Jithin_Krishnan_CV.pdf"');
+      return res.send(pdfBuffer);
+    }
+
+    if (cvRecord.fileUrl && !cvRecord.fileUrl.includes('cloudinary.com')) {
+      return res.redirect(cvRecord.fileUrl);
+    }
+
+    res.redirect('/cv.pdf');
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 app.post('/api/cv', async (req, res) => {
   const { fileData, fileUrl } = req.body;
   try {
     let cvRecord = await CV.findOne();
     if (cvRecord) {
-      cvRecord.fileData = fileData || "";
-      cvRecord.fileUrl = fileUrl || "";
+      if (fileData) cvRecord.fileData = fileData;
+      if (fileUrl) cvRecord.fileUrl = fileUrl;
       cvRecord.updatedAt = new Date();
     } else {
-      cvRecord = new CV({ fileData, fileUrl });
+      cvRecord = new CV({ fileData: fileData || "", fileUrl: fileUrl || "" });
     }
     await cvRecord.save();
     res.json(cvRecord);
