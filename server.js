@@ -15,9 +15,26 @@ app.use(cors());
 
 const mongoURI = process.env.MONGO_URI || "mongodb+srv://aminaashraf246:amina@cluster0.y837guw.mongodb.net/portfolioDB?retryWrites=true&w=majority&appName=Cluster0";
 
-mongoose.connect(mongoURI)
-  .then(() => console.log('Connected to MongoDB successfully.'))
-  .catch(err => console.error('MongoDB connection error:', err));
+// Serverless-friendly MongoDB connection handler
+let isDbConnected = false;
+const connectDB = async () => {
+  if (isDbConnected || mongoose.connection.readyState >= 1) return;
+  try {
+    await mongoose.connect(mongoURI);
+    isDbConnected = true;
+    console.log('Connected to MongoDB successfully.');
+  } catch (err) {
+    console.error('MongoDB connection error:', err);
+  }
+};
+
+connectDB();
+
+// Ensure DB connection before processing requests (essential for Vercel serverless cold starts)
+app.use(async (req, res, next) => {
+  await connectDB();
+  next();
+});
 
 // Schema Definition
 const workSchema = new mongoose.Schema({
