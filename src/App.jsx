@@ -65,6 +65,15 @@ export default function App() {
     return dataStr;
   };
 
+  // Safe Lightbox close handler to prevent mobile ghost clicks and page reloads
+  const closeLightbox = (e) => {
+    if (e) {
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
+    }
+    setLightboxItem(null);
+  };
+
   // Fetch CV from database
   const fetchCv = async () => {
     try {
@@ -168,6 +177,32 @@ export default function App() {
   useEffect(() => {
     setVisibleCount(9);
   }, [selectedCategory]);
+
+  // Mobile popstate / hardware back button handling so mobile back closes modal rather than leaving the site
+  useEffect(() => {
+    if (lightboxItem) {
+      window.history.pushState({ modal: 'lightbox' }, '');
+      const handlePop = () => {
+        setLightboxItem(null);
+      };
+      window.addEventListener('popstate', handlePop);
+      return () => {
+        window.removeEventListener('popstate', handlePop);
+      };
+    }
+  }, [lightboxItem]);
+
+  // Lock body scroll and prevent touch through when modals or menus are open
+  useEffect(() => {
+    if (lightboxItem || isAdminOpen || isMobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [lightboxItem, isAdminOpen, isMobileMenuOpen]);
 
   // Custom Cursor mousemove listener
   useEffect(() => {
@@ -1792,10 +1827,22 @@ export default function App() {
       )}
       {/* Lightbox Modal for viewing work */}
       {lightboxItem && (
-        <div className="fixed inset-0 z-[10002] flex items-center justify-center bg-black/95 p-4 sm:p-6 md:p-8 backdrop-blur-md overflow-y-auto">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) closeLightbox(e);
+          }}
+          className="fixed inset-0 z-[10002] flex items-center justify-center bg-black/95 p-4 sm:p-6 md:p-8 backdrop-blur-md overflow-y-auto"
+        >
+          {/* Top Close Button with touch protection to prevent ghost click-through */}
           <button
-            onClick={() => setLightboxItem(null)}
-            className="fixed top-4 right-4 sm:top-6 sm:right-6 text-gray-300 hover:text-white w-10 h-10 sm:w-12 sm:h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-xl sm:text-2xl hoverable z-50 focus:outline-none transition-colors"
+            type="button"
+            onClick={closeLightbox}
+            onTouchEnd={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              closeLightbox(e);
+            }}
+            className="fixed top-4 right-4 sm:top-6 sm:right-6 text-gray-300 hover:text-white active:text-accent w-11 h-11 sm:w-12 sm:h-12 bg-white/10 hover:bg-white/20 active:bg-accent rounded-full flex items-center justify-center text-xl sm:text-2xl hoverable z-[10005] focus:outline-none transition-colors shadow-2xl cursor-pointer"
             aria-label="Close modal"
           >
             <i className="fa-solid fa-xmark"></i>
@@ -1858,6 +1905,22 @@ export default function App() {
                   {lightboxItem.description}
                 </p>
               )}
+
+              {/* Bottom Close Button for easy thumb reach on mobile */}
+              <div className="pt-6 flex justify-center">
+                <button
+                  type="button"
+                  onClick={closeLightbox}
+                  onTouchEnd={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    closeLightbox(e);
+                  }}
+                  className="px-6 py-2.5 bg-white/10 hover:bg-white/20 active:bg-accent text-white text-xs font-semibold uppercase tracking-widest rounded-full flex items-center gap-2 transition-all cursor-pointer shadow-lg"
+                >
+                  <i className="fa-solid fa-xmark"></i> Close Preview
+                </button>
+              </div>
             </div>
           </div>
         </div>
