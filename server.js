@@ -126,7 +126,13 @@ apiRouter.post('/works/seed', async (req, res) => {
         title: "AD CREATIVES",
         category: "AD CREATIVES",
         type: "image",
-        fileUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuAy6XqjTAjayP4m-nuZfOwXTdIqxAE59vY0P0CWkD0H2j89ToNskdZU4lwr6BGBU9NnoGVxsqDVWfG1-nCQkM5LFZhKt9GCjMJ-4hesWsL7Pu7msbj0YTDkjgiZKp2Jt0dZF21FI59MepmYozEr0invbwcxd6UhMFRosCDgvMg1k8UHuA3VBq6Eow1NEHabhoVot1wnJ6vePAuDo7pvgeEH3f3gZ-U42JzTHqic_81A4FoJOdfYkBU_bpYHAnQs_BNfXm_hkbcaN7E"
+        fileUrl: "/add.png"
+      },
+      {
+        title: "POSTER DESIGNS",
+        category: "POSTERS",
+        type: "image",
+        fileUrl: "/poster.png"
       },
       {
         title: "VIDEOS",

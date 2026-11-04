@@ -687,8 +687,21 @@ export default function App() {
     }
   };
 
+  // Helper to resolve media URL for work items (applying poster.png and add.png mockups for respective categories)
+  const getWorkMediaSrc = (work) => {
+    if (!work) return '';
+    const cat = (work.category || '').toUpperCase();
+    if (cat.includes('POSTER')) {
+      return work.fileData?.startsWith('data:') ? work.fileData : '/poster.png';
+    }
+    if (cat.includes('AD') || cat.includes('CREATIVE')) {
+      return work.fileData?.startsWith('data:') ? work.fileData : '/add.png';
+    }
+    return work.fileData || work.fileUrl || '';
+  };
+
   const renderWorkMedia = (work) => {
-    const src = work.fileData || work.fileUrl;
+    const src = getWorkMediaSrc(work);
     if (work.type === 'video') {
       if (src && (src.includes('youtube.com') || src.includes('youtu.be') || src.includes('vimeo'))) {
         return (
@@ -1876,7 +1889,7 @@ export default function App() {
                 )
               ) : (
                 <img
-                  src={lightboxItem.fileData || lightboxItem.fileUrl}
+                  src={getWorkMediaSrc(lightboxItem)}
                   alt={lightboxItem.title}
                   className="max-h-[60vh] sm:max-h-[75vh] object-contain rounded-lg"
                 />
