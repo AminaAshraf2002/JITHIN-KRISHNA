@@ -39,7 +39,7 @@ app.use(async (req, res, next) => {
 // Schema Definition
 const workSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  category: { type: String, required: true }, // e.g. "AD CREATIVES", "BROUCHERS", etc.
+  category: { type: String, required: true },
   type: { type: String, required: true, enum: ['image', 'doc', 'video'] },
   fileData: { type: String }, // Base64 data
   fileUrl: { type: String },  // External URL
@@ -49,8 +49,19 @@ const workSchema = new mongoose.Schema({
 
 const Work = mongoose.model('Work', workSchema);
 
-// API Routes
-app.get('/api/works', async (req, res) => {
+// CV Schema definition
+const cvSchema = new mongoose.Schema({
+  fileData: { type: String }, // Base64 representation of PDF
+  fileUrl: { type: String },  // External link fallback
+  updatedAt: { type: Date, default: Date.now }
+});
+
+const CV = mongoose.model('CV', cvSchema);
+
+// Router: Mounts on both /api and / to seamlessly support Vercel Serverless and local Express
+const apiRouter = express.Router();
+
+apiRouter.get('/works', async (req, res) => {
   try {
     const works = await Work.find().sort({ createdAt: -1 });
     res.json(works);
@@ -59,23 +70,14 @@ app.get('/api/works', async (req, res) => {
   }
 });
 
-app.post('/api/works', async (req, res) => {
+apiRouter.post('/works', async (req, res) => {
   const { title, category, type, fileData, fileUrl, description } = req.body;
-  
   if (!title || !category || !type) {
     return res.status(400).json({ message: 'Title, category, and type are required.' });
   }
 
   try {
-    const newWork = new Work({
-      title,
-      category,
-      type,
-      fileData,
-      fileUrl,
-      description
-    });
-    
+    const newWork = new Work({ title, category, type, fileData, fileUrl, description });
     const savedWork = await newWork.save();
     res.status(201).json(savedWork);
   } catch (error) {
@@ -83,7 +85,7 @@ app.post('/api/works', async (req, res) => {
   }
 });
 
-app.delete('/api/works/:id', async (req, res) => {
+apiRouter.delete('/works/:id', async (req, res) => {
   try {
     const deletedWork = await Work.findByIdAndDelete(req.params.id);
     if (!deletedWork) {
@@ -95,7 +97,7 @@ app.delete('/api/works/:id', async (req, res) => {
   }
 });
 
-app.put('/api/works/:id', async (req, res) => {
+apiRouter.put('/works/:id', async (req, res) => {
   const { title, category, type, fileData, fileUrl, description } = req.body;
   try {
     const updatedWork = await Work.findByIdAndUpdate(
@@ -112,8 +114,7 @@ app.put('/api/works/:id', async (req, res) => {
   }
 });
 
-// Seed Initial Data Route if database is empty
-app.post('/api/works/seed', async (req, res) => {
+apiRouter.post('/works/seed', async (req, res) => {
   try {
     const count = await Work.countDocuments();
     if (count > 0) {
@@ -164,17 +165,9 @@ app.post('/api/works/seed', async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-});// CV Schema definition
-const cvSchema = new mongoose.Schema({
-  fileData: { type: String }, // Base64 representation of PDF
-  fileUrl: { type: String },  // External link fallback
-  updatedAt: { type: Date, default: Date.now }
 });
 
-const CV = mongoose.model('CV', cvSchema);
-
-// CV Endpoints
-app.get('/api/cv', async (req, res) => {
+apiRouter.get('/cv', async (req, res) => {
   try {
     const cvRecord = await CV.findOne().sort({ updatedAt: -1 });
     if (!cvRecord) {
@@ -186,8 +179,7 @@ app.get('/api/cv', async (req, res) => {
   }
 });
 
-// Direct PDF streaming endpoint for CV viewing in browser (bypasses Cloudinary 401 ACL restrictions)
-app.get('/api/cv/view', async (req, res) => {
+apiRouter.get('/cv/view', async (req, res) => {
   try {
     const cvRecord = await CV.findOne().sort({ updatedAt: -1 });
     if (!cvRecord) {
@@ -212,7 +204,7 @@ app.get('/api/cv/view', async (req, res) => {
   }
 });
 
-app.post('/api/cv', async (req, res) => {
+apiRouter.post('/cv', async (req, res) => {
   const { fileData, fileUrl } = req.body;
   try {
     let cvRecord = await CV.findOne();
@@ -229,6 +221,14 @@ app.post('/api/cv', async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 });
+
+apiRouter.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
+});
+
+// Attach router to both /api prefix and root / prefix
+app.use('/api', apiRouter);
+app.use('/', apiRouter);
 
 // Root & Health check routes for DigitalOcean App Platform / Docker
 app.get('/health', (req, res) => {
