@@ -1127,6 +1127,18 @@ export default function App() {
             <a href="#work" className="hover:text-accent transition-colors">Work</a>
             <a href="#contact" className="hover:text-accent transition-colors">Contact</a>
 
+            {/* LinkedIn Icon Link */}
+            <a
+              href="https://www.linkedin.com/in/jithinkrishnan"
+              target="_blank"
+              rel="noreferrer"
+              className="text-gray-400 hover:text-accent transition-colors text-base"
+              title="LinkedIn Profile"
+              aria-label="LinkedIn Profile"
+            >
+              <i className="fa-brands fa-linkedin-in"></i>
+            </a>
+
             {/* View CV Button */}
             <a
               href={cvUrl}
@@ -1203,6 +1215,18 @@ export default function App() {
               >
                 <span>Contact</span>
                 <i className="fa-solid fa-arrow-right text-xs text-accent"></i>
+              </a>
+              <a
+                href="https://www.linkedin.com/in/jithinkrishnan"
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="py-2 border-b border-white/5 hover:text-accent transition-colors flex items-center justify-between text-gray-300"
+              >
+                <span className="flex items-center gap-2">
+                  <i className="fa-brands fa-linkedin-in text-accent"></i> LinkedIn
+                </span>
+                <i className="fa-solid fa-arrow-up-right-from-square text-xs text-accent"></i>
               </a>
             </div>
 
@@ -1281,6 +1305,9 @@ export default function App() {
               <a href="#contact" className="px-5 sm:px-6 md:px-5 lg:px-6 xl:px-8 2xl:px-10 py-2.5 sm:py-3 md:py-2.5 lg:py-3 xl:py-3.5 2xl:py-5 border border-white/20 font-medium hover:border-accent hover:text-accent transition-colors duration-300 text-center text-xs sm:text-sm md:text-xs lg:text-sm xl:text-base 2xl:text-lg">Let's Talk</a>
               <a href={cvUrl} target="_blank" rel="noreferrer" className="px-5 sm:px-6 md:px-5 lg:px-6 xl:px-8 2xl:px-10 py-2.5 sm:py-3 md:py-2.5 lg:py-3 xl:py-3.5 2xl:py-5 border border-white/20 font-medium hover:border-accent hover:text-accent transition-colors duration-300 flex items-center justify-center gap-2 text-center text-xs sm:text-sm md:text-xs lg:text-sm xl:text-base 2xl:text-lg">
                 <i className="fa-solid fa-file-pdf"></i> View CV
+              </a>
+              <a href="https://www.linkedin.com/in/jithinkrishnan" target="_blank" rel="noreferrer" className="px-5 sm:px-6 md:px-5 lg:px-6 xl:px-8 2xl:px-10 py-2.5 sm:py-3 md:py-2.5 lg:py-3 xl:py-3.5 2xl:py-5 border border-white/20 font-medium hover:border-[#0A66C2] hover:text-[#0A66C2] transition-colors duration-300 flex items-center justify-center gap-2 text-center text-xs sm:text-sm md:text-xs lg:text-sm xl:text-base 2xl:text-lg">
+                <i className="fa-brands fa-linkedin-in text-accent"></i> LinkedIn
               </a>
             </div>
           </div>
@@ -1681,7 +1708,7 @@ export default function App() {
             <span className="text-xs sm:text-sm mt-1.5 block text-gray-500"><i className="fa-solid fa-earth-asia mr-2"></i>Speaking English, Malayalam & Tamil</span>
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-8 sm:mb-14 text-left sm:text-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 lg:gap-5 mb-8 sm:mb-14 text-left sm:text-center">
             <a
               href="mailto:jithinkrishnan1000@gmail.com"
               className="hoverable group cursor-pointer flex sm:flex-col items-center gap-3.5 sm:gap-3 p-3.5 sm:p-5 rounded-2xl glass-panel border border-white/5 hover:border-accent/40 transition-all duration-300"
@@ -1708,17 +1735,20 @@ export default function App() {
               </div>
             </a>
 
-            <div
-              className="hoverable group flex sm:flex-col items-center gap-3.5 sm:gap-3 p-3.5 sm:p-5 rounded-2xl glass-panel border border-white/5"
+            <a
+              href="https://www.linkedin.com/in/jithinkrishnan"
+              target="_blank"
+              rel="noreferrer"
+              className="hoverable group cursor-pointer flex sm:flex-col items-center gap-3.5 sm:gap-3 p-3.5 sm:p-5 rounded-2xl glass-panel border border-white/5 hover:border-accent/40 transition-all duration-300"
             >
-              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-accent/10 border border-accent/20 sm:mx-auto flex items-center justify-center shrink-0">
-                <i className="fa-solid fa-location-dot text-accent text-lg sm:text-2xl transition-transform duration-300"></i>
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-accent/10 border border-accent/20 sm:mx-auto flex items-center justify-center group-hover:bg-accent/20 group-hover:scale-110 transition-all duration-300 shrink-0">
+                <i className="fa-brands fa-linkedin-in text-accent text-lg sm:text-2xl transition-transform duration-300"></i>
               </div>
               <div className="min-w-0 flex-1 sm:flex-initial">
-                <div className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-gray-400 mb-0.5">Location</div>
-                <div className="font-medium text-xs sm:text-sm md:text-base text-gray-200">Palakkad, Kerala</div>
+                <div className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-gray-400 mb-0.5">LinkedIn</div>
+                <div className="font-medium text-xs sm:text-sm md:text-base hover:text-accent transition-colors truncate">jithinkrishnan</div>
               </div>
-            </div>
+            </a>
 
             <a
               href="https://www.instagram.com/gra_phicwaves?igsh=aGtiMDM5ZWVuejBr&utm_source=ig_contact_invite"
@@ -1734,6 +1764,18 @@ export default function App() {
                 <div className="font-medium text-xs sm:text-sm md:text-base hover:text-accent transition-colors">@gra_phicwaves</div>
               </div>
             </a>
+
+            <div
+              className="hoverable group flex sm:flex-col items-center gap-3.5 sm:gap-3 p-3.5 sm:p-5 rounded-2xl glass-panel border border-white/5 sm:col-span-2 md:col-span-1 lg:col-span-1"
+            >
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-accent/10 border border-accent/20 sm:mx-auto flex items-center justify-center shrink-0">
+                <i className="fa-solid fa-location-dot text-accent text-lg sm:text-2xl transition-transform duration-300"></i>
+              </div>
+              <div className="min-w-0 flex-1 sm:flex-initial">
+                <div className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-gray-400 mb-0.5">Location</div>
+                <div className="font-medium text-xs sm:text-sm md:text-base text-gray-200">Palakkad, Kerala</div>
+              </div>
+            </div>
           </div>
 
           <a
@@ -1747,12 +1789,42 @@ export default function App() {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 sm:py-10 px-4 sm:px-6 lg:px-8 border-t border-white/5 text-center md:text-left flex flex-col md:flex-row justify-between items-center max-w-7xl 2xl:max-w-[1680px] mx-auto text-xs sm:text-sm text-gray-500 uppercase tracking-widest font-medium gap-3 sm:gap-4">
+      <footer className="py-8 sm:py-10 px-4 sm:px-6 lg:px-8 border-t border-white/5 text-center md:text-left flex flex-col md:flex-row justify-between items-center max-w-7xl 2xl:max-w-[1680px] mx-auto text-xs sm:text-sm text-gray-500 uppercase tracking-widest font-medium gap-4">
         <div className="font-bebas text-xl sm:text-2xl tracking-wider text-white">
           J<span className="text-accent">.</span>K
         </div>
         <div>
           © 2026 JITHIN KRISHNAN. DESIGNED WITH PRECISION.
+        </div>
+        <div className="flex items-center gap-5 text-base text-gray-400">
+          <a
+            href="https://www.linkedin.com/in/jithinkrishnan"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-accent transition-colors"
+            title="LinkedIn Profile"
+            aria-label="LinkedIn Profile"
+          >
+            <i className="fa-brands fa-linkedin-in text-lg"></i>
+          </a>
+          <a
+            href="https://www.instagram.com/gra_phicwaves?igsh=aGtiMDM5ZWVuejBr&utm_source=ig_contact_invite"
+            target="_blank"
+            rel="noreferrer"
+            className="hover:text-accent transition-colors"
+            title="Instagram Profile"
+            aria-label="Instagram Profile"
+          >
+            <i className="fa-brands fa-instagram text-lg"></i>
+          </a>
+          <a
+            href="mailto:jithinkrishnan1000@gmail.com"
+            className="hover:text-accent transition-colors"
+            title="Send Email"
+            aria-label="Send Email"
+          >
+            <i className="fa-solid fa-envelope text-lg"></i>
+          </a>
         </div>
         <div>
           PALAKKAD, KERALA
