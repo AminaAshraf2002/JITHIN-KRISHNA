@@ -687,21 +687,123 @@ export default function App() {
     }
   };
 
-  // Helper to resolve media URL for work items (applying poster.png and add.png mockups for respective categories)
+  // Helper to resolve artwork source (falls back to sample artwork if none provided)
   const getWorkMediaSrc = (work) => {
     if (!work) return '';
+    const raw = work.fileData || work.fileUrl;
+    if (raw && raw !== '/poster.png' && raw !== '/add.png') {
+      return raw;
+    }
     const cat = (work.category || '').toUpperCase();
     if (cat.includes('POSTER')) {
-      return work.fileData?.startsWith('data:') ? work.fileData : '/poster.png';
+      return '/mockups/sample-poster.png';
     }
     if (cat.includes('AD') || cat.includes('CREATIVE')) {
-      return work.fileData?.startsWith('data:') ? work.fileData : '/add.png';
+      return '/mockups/sample-ad.png';
     }
-    return work.fileData || work.fileUrl || '';
+    return raw || '';
   };
 
-  const renderWorkMedia = (work) => {
+  const renderWorkMedia = (work, useMockup = false) => {
     const src = getWorkMediaSrc(work);
+    const cat = (work.category || '').toUpperCase();
+
+    // If mockups are enabled for this view (active only when POSTERS or AD CREATIVES category filter is selected)
+    if (useMockup) {
+      // 1. POSTERS category -> Default: inside picture frame mockup. Hover: reveals original artwork.
+      if (cat.includes('POSTER')) {
+        return (
+          <div className="relative w-full h-full overflow-hidden select-none">
+            {/* Default Mockup View (fades out on card hover) */}
+            <div className="absolute inset-0 w-full h-full flex items-center justify-center p-1 bg-transparent transition-all duration-500 ease-out group-hover/card:opacity-0 group-hover/card:scale-95 pointer-events-none">
+              <div className="relative w-auto h-full aspect-[1024/1536] max-w-full flex items-center justify-center drop-shadow-[0_15px_30px_rgba(0,0,0,0.85)]">
+                {/* Artwork inside frame */}
+                <img
+                  src={src}
+                  alt={work.title}
+                  className="absolute object-cover"
+                  style={{
+                    left: '3.52%',
+                    top: '2.34%',
+                    width: '92.97%',
+                    height: '95.31%'
+                  }}
+                  onError={(e) => {
+                    e.target.src = '/mockups/sample-poster.png';
+                  }}
+                />
+                {/* Picture frame overlay */}
+                <img
+                  src="/mockups/poster-frame.png"
+                  alt="Poster Frame Mockup"
+                  className="relative w-full h-full object-contain pointer-events-none select-none z-10"
+                />
+              </div>
+            </div>
+
+            {/* Hover View: Original flat artwork reveals cleanly */}
+            <div className="absolute inset-0 w-full h-full opacity-0 scale-105 group-hover/card:opacity-100 group-hover/card:scale-100 transition-all duration-500 ease-out">
+              <img
+                src={src}
+                alt={work.title}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  e.target.src = '/mockups/sample-poster.png';
+                }}
+              />
+            </div>
+          </div>
+        );
+      }
+
+      // 2. AD CREATIVES category -> Default: inside phone mockup. Hover: reveals original artwork.
+      if (cat.includes('AD') || cat.includes('CREATIVE')) {
+        return (
+          <div className="relative w-full h-full overflow-hidden select-none">
+            {/* Default Mockup View: iPhone Instagram mockup (fades out on card hover) */}
+            <div className="absolute inset-0 w-full h-full flex items-center justify-center p-0 m-0 bg-transparent transition-all duration-500 ease-out group-hover/card:opacity-0 group-hover/card:scale-95 pointer-events-none">
+              <div className="ad-phone-mockup-wrapper relative w-auto h-full max-h-full aspect-[608/1248] flex items-center justify-center drop-shadow-[0_15px_35px_rgba(0,0,0,0.9)]">
+                {/* Artwork inside phone screen */}
+                <img
+                  src={src}
+                  alt={work.title}
+                  className="ad-phone-artwork absolute object-cover"
+                  style={{
+                    left: '3.62%',
+                    top: '19.71%',
+                    width: '92.76%',
+                    height: '59.05%'
+                  }}
+                  onError={(e) => {
+                    e.target.src = '/mockups/sample-ad.png';
+                  }}
+                />
+                {/* iPhone Instagram mockup overlay (tightly fitted phone, zero cropping) */}
+                <img
+                  src="/mockups/ad-phone.png"
+                  alt="Ad Phone Mockup"
+                  className="ad-phone-overlay relative w-full h-full object-contain pointer-events-none select-none z-10"
+                />
+              </div>
+            </div>
+
+            {/* Hover View: Original flat artwork reveals cleanly */}
+            <div className="absolute inset-0 w-full h-full opacity-0 group-hover/card:opacity-100 transition-opacity duration-500 ease-out rounded-lg sm:rounded-xl overflow-hidden">
+              <img
+                src={src}
+                alt={work.title}
+                className="ad-hover-artwork w-full h-full object-cover transition-transform duration-500 ease-out"
+                style={{ objectPosition: 'center top' }}
+                onError={(e) => {
+                  e.target.src = '/mockups/sample-ad.png';
+                }}
+              />
+            </div>
+          </div>
+        );
+      }
+    }
+
     if (work.type === 'video') {
       if (src && (src.includes('youtube.com') || src.includes('youtu.be') || src.includes('vimeo'))) {
         return (
@@ -795,7 +897,7 @@ export default function App() {
         className={`gallery-marquee-item ${isShort ? 'short' : 'tall'} hoverable cursor-pointer`}
         onClick={() => setLightboxItem(work)}
       >
-        {renderWorkMedia(work)}
+        {renderWorkMedia(work, false)}
         <div className="portfolio-overlay">
           <div className="text-white/85 text-xs font-bold uppercase tracking-widest mb-2">{work.category}</div>
           <h3 className="font-bebas text-4xl tracking-widest">{work.title}</h3>
@@ -904,21 +1006,89 @@ export default function App() {
       );
     }
 
+    const isAdCreatives = selectedCategory === 'AD CREATIVES';
+    const isMockupCategory = selectedCategory === 'POSTERS' || isAdCreatives;
+
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-6">
-        {filteredItems.map(work => (
-          <div
-            key={work._id}
-            onClick={() => setLightboxItem(work)}
-            className="portfolio-card hoverable cursor-pointer h-[210px] sm:h-[300px] md:h-[340px] 2xl:h-[360px] rounded-lg sm:rounded-xl overflow-hidden"
-          >
-            {renderWorkMedia(work)}
-            <div className="portfolio-overlay !p-3 sm:!p-6 md:!p-10">
-              <div className="text-white/85 text-[9px] sm:text-xs font-bold uppercase tracking-wider sm:tracking-widest mb-1 sm:mb-2">{work.category}</div>
-              <h3 className="font-bebas text-lg sm:text-3xl md:text-4xl tracking-wider leading-tight sm:leading-none">{work.title}</h3>
+      <div className={`grid ${
+        isAdCreatives
+          ? 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6 ad-creatives-grid'
+          : isMockupCategory
+            ? 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-3 gap-3 sm:gap-6'
+            : 'grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-3 sm:gap-6'
+      }`}>
+        {isAdCreatives ? (
+          filteredItems.map(work => {
+            const src = getWorkMediaSrc(work);
+            return (
+              <div
+                key={work._id}
+                onClick={() => setLightboxItem(work)}
+                className="portfolio-card ad-creative-card group/card hoverable cursor-pointer relative !bg-transparent !shadow-none border-0 select-none flex items-center justify-center"
+              >
+                {/* 1. Normal State: Phone Mockup (centered, fluid clamp(240px, 22vw, 380px), ratio 608/1248) */}
+                <div className="ad-phone-mockup-wrapper relative w-full flex items-center justify-center transition-all duration-500 ease-out group-hover/card:opacity-0 group-hover/card:scale-95 pointer-events-none">
+                  <div className="ad-phone-inner relative w-full aspect-[608/1248] flex items-center justify-center drop-shadow-[0_15px_35px_rgba(0,0,0,0.9)]">
+                    <img
+                      src={src}
+                      alt={work.title}
+                      className="ad-phone-artwork absolute object-cover"
+                      style={{
+                        left: '3.62%',
+                        top: '19.71%',
+                        width: '92.76%',
+                        height: '59.05%'
+                      }}
+                      onError={(e) => {
+                        e.target.src = '/mockups/sample-ad.png';
+                      }}
+                    />
+                    <img
+                      src="/mockups/ad-phone.png"
+                      alt="Ad Phone Mockup"
+                      className="ad-phone-overlay relative w-full h-full object-contain pointer-events-none select-none z-10"
+                    />
+                  </div>
+                </div>
+
+                {/* 2. Hover State: Exact size of other filter tab cards (w-full, standard height h-[210px] sm:h-[300px] md:h-[340px] 2xl:h-[360px], no mockup) */}
+                <div className="ad-hover-card-container absolute inset-0 m-auto w-full h-[210px] sm:h-[300px] md:h-[340px] 2xl:h-[360px] opacity-0 group-hover/card:opacity-100 transition-all duration-500 ease-out rounded-lg sm:rounded-xl overflow-hidden bg-[#111] shadow-2xl pointer-events-none z-20">
+                  <img
+                    src={src}
+                    alt={work.title}
+                    className="ad-hover-artwork w-full h-full object-cover transition-transform duration-700 ease-out group-hover/card:scale-[1.03]"
+                    style={{ objectPosition: 'center top' }}
+                    onError={(e) => {
+                      e.target.src = '/mockups/sample-ad.png';
+                    }}
+                  />
+                  <div className="portfolio-overlay !p-3 sm:!p-6 md:!p-8 !opacity-0 group-hover/card:!opacity-95 !transform !translate-y-full group-hover/card:!translate-y-0 transition-all duration-500 flex flex-col justify-end">
+                    <div className="text-white/85 text-[9px] sm:text-xs font-bold uppercase tracking-wider sm:tracking-widest mb-1 sm:mb-2">{work.category}</div>
+                    <h3 className="font-bebas text-lg sm:text-2xl md:text-3xl tracking-wider leading-tight sm:leading-none">{work.title}</h3>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          filteredItems.map(work => (
+            <div
+              key={work._id}
+              onClick={() => setLightboxItem(work)}
+              className={`portfolio-card group/card hoverable cursor-pointer rounded-lg sm:rounded-xl overflow-hidden ${
+                isMockupCategory
+                  ? 'mockup-card !bg-transparent !shadow-none border-0 h-[280px] sm:h-[350px] md:h-[420px] 2xl:h-[460px]'
+                  : 'h-[210px] sm:h-[300px] md:h-[340px] 2xl:h-[360px]'
+              }`}
+            >
+              {renderWorkMedia(work, isMockupCategory)}
+              <div className="portfolio-overlay !p-3 sm:!p-6 md:!p-10">
+                <div className="text-white/85 text-[9px] sm:text-xs font-bold uppercase tracking-wider sm:tracking-widest mb-1 sm:mb-2">{work.category}</div>
+                <h3 className="font-bebas text-lg sm:text-3xl md:text-4xl tracking-wider leading-tight sm:leading-none">{work.title}</h3>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
     );
   };
@@ -1182,7 +1352,7 @@ export default function App() {
               </h2>
 
               <div className="space-y-4 sm:space-y-6 text-gray-400 font-light leading-relaxed text-base sm:text-lg">
-                <p className="about-para"><i className="fa-solid fa-quote-left text-accentSec/30 text-xl sm:text-2xl mr-2 sm:mr-3"></i>Creative and detail-oriented Graphic Designer with 1+ year of professional experience in digital marketing and visual content creation. Currently working at <strong>Inspite Technologies, Infopark Kochi</strong>, specializing in social media creatives, brochures, hoarding designs, app banners, branding materials, and promotional video editing.</p>
+                <p className="about-para"><i className="fa-solid fa-quote-left text-accentSec/30 text-xl sm:text-2xl mr-2 sm:mr-3"></i>Creative and detail-oriented Graphic Designer with professional experience in digital marketing and visual content creation. Currently working as Senior Graphic Designer and Video Editor at <strong>Infynix Solutions, Kochi</strong> (formerly at Inspite Technologies), specializing in social media creatives, brochures, hoarding designs, app banners, branding materials, and promotional video editing.</p>
                 <p className="about-para">Skilled in creating modern, visually engaging, and marketing-focused designs that improve audience engagement and brand visibility. Proficient in Adobe Photoshop, Illustrator, InDesign, Premiere Pro, and Canva with strong expertise in digital advertising, layout design, and visual communication.</p>
                 <p className="about-para">Experienced in managing multiple creative projects within deadline-driven environments while maintaining high-quality design standards and client satisfaction. Also actively working as a freelance Graphic Designer and Video Editor for brands, startups, and businesses.</p>
               </div>
@@ -1338,7 +1508,24 @@ export default function App() {
               <div className="timeline-dot left-0 md:left-auto md:right-[-12px] transition-transform duration-300 group-hover:scale-125 flex items-center justify-center">
                 <i className="fa-solid fa-circle-dot text-[8px] text-accent"></i>
               </div>
-              <div className="text-accent text-xs sm:text-sm font-bold uppercase tracking-widest mb-1.5 sm:mb-2"><i className="fa-solid fa-calendar-days mr-2"></i>April 2025 – Present</div>
+              <div className="text-accent text-xs sm:text-sm font-bold uppercase tracking-widest mb-1.5 sm:mb-2"><i className="fa-solid fa-calendar-days mr-2"></i>June 2026 – Present</div>
+              <h3 className="font-bebas text-2xl sm:text-3xl tracking-widest mb-1">Senior Graphic Designer and Video Editor</h3>
+              <p className="text-gray-400 font-medium text-sm sm:text-base mb-3 sm:mb-4"><i className="fa-solid fa-building mr-2"></i>Infynix Solutions, Oberon Mall, Padivattom, Edappally, Kochi</p>
+              <ul className="space-y-2.5 sm:space-y-2 text-gray-300 font-light text-sm sm:text-sm 2xl:text-base">
+                <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Design high-impact social media creatives, digital advertisements, and promotional graphics for multiple brands.</span></li>
+                <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Produce brochures, banners, app creatives, hoarding designs, and marketing materials for digital and print campaigns.</span></li>
+                <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Edit engaging promotional videos, reels, and ad content tailored to each social media platform.</span></li>
+                <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Translate marketing objectives into creative concepts and visual strategies aligned with brand identity.</span></li>
+                <li className="flex items-start gap-2.5 sm:gap-3"><i className="fa-solid fa-caret-right text-accent mt-1 shrink-0"></i> <span>Collaborate with team members and clients to deliver effective visual communication and marketing solutions.</span></li>
+              </ul>
+            </div>
+
+            {/* Exp 2 */}
+            <div className="exp-item relative mb-12 sm:mb-16 pl-10 md:w-1/2 md:ml-auto md:pl-12 lg:md:pl-16 text-left group opacity-0 translate-y-10">
+              <div className="timeline-dot left-0 md:left-[-12px] transition-transform duration-300 group-hover:scale-125 flex items-center justify-center">
+                <i className="fa-solid fa-circle-dot text-[8px] text-accent"></i>
+              </div>
+              <div className="text-gray-400 text-xs sm:text-sm font-bold uppercase tracking-widest mb-1.5 sm:mb-2"><i className="fa-solid fa-calendar-days mr-2"></i>April 2025 – May 2026</div>
               <h3 className="font-bebas text-2xl sm:text-3xl tracking-widest mb-1">Graphic Designer</h3>
               <p className="text-gray-400 font-medium text-sm sm:text-base mb-3 sm:mb-4"><i className="fa-solid fa-building mr-2"></i>Inspite Technologies – Infopark Kochi</p>
               <ul className="space-y-2.5 sm:space-y-2 text-gray-300 font-light text-sm sm:text-sm 2xl:text-base">
@@ -1351,9 +1538,9 @@ export default function App() {
               </ul>
             </div>
 
-            {/* Exp 2 */}
-            <div className="exp-item relative mb-12 sm:mb-16 pl-10 md:w-1/2 md:ml-auto md:pl-12 lg:md:pl-16 text-left group opacity-0 translate-y-10">
-              <div className="timeline-dot left-0 md:left-[-12px] transition-transform duration-300 group-hover:scale-125 flex items-center justify-center">
+            {/* Exp 3 */}
+            <div className="exp-item relative mb-12 sm:mb-16 pl-10 md:pl-0 md:w-1/2 md:pr-12 lg:md:pr-16 text-left group opacity-0 translate-y-10">
+              <div className="timeline-dot left-0 md:left-auto md:right-[-12px] transition-transform duration-300 group-hover:scale-125 flex items-center justify-center">
                 <i className="fa-solid fa-circle-dot text-[8px] text-accent"></i>
               </div>
               <div className="text-gray-400 text-xs sm:text-sm font-bold uppercase tracking-widest mb-1.5 sm:mb-2"><i className="fa-solid fa-calendar-days mr-2"></i>3-Month Internship</div>
@@ -1367,9 +1554,9 @@ export default function App() {
               </ul>
             </div>
 
-            {/* Exp 3 */}
-            <div className="exp-item relative pl-10 md:pl-0 md:w-1/2 md:pr-12 lg:md:pr-16 text-left group opacity-0 translate-y-10">
-              <div className="timeline-dot left-0 md:left-auto md:right-[-12px] transition-transform duration-300 group-hover:scale-125 flex items-center justify-center">
+            {/* Exp 4 */}
+            <div className="exp-item relative pl-10 md:w-1/2 md:ml-auto md:pl-12 lg:md:pl-16 text-left group opacity-0 translate-y-10">
+              <div className="timeline-dot left-0 md:left-[-12px] transition-transform duration-300 group-hover:scale-125 flex items-center justify-center">
                 <i className="fa-solid fa-circle-dot text-[8px] text-accent"></i>
               </div>
               <div className="text-accent text-xs sm:text-sm font-bold uppercase tracking-widest mb-1.5 sm:mb-2"><i className="fa-solid fa-calendar-days mr-2"></i>Ongoing</div>
@@ -1415,7 +1602,9 @@ export default function App() {
             {buildMarqueeLayout(works)}
           </div>
         ) : (
-          <div className="max-w-7xl 2xl:max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16">
+          <div className={`max-w-7xl 2xl:max-w-[1680px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 ${
+            selectedCategory === 'AD CREATIVES' ? 'ad-creatives-container' : ''
+          }`}>
             {renderNormalGrid(works.filter(work => matchesCategory(work, selectedCategory)))}
           </div>
         )}
@@ -1891,7 +2080,12 @@ export default function App() {
                 <img
                   src={getWorkMediaSrc(lightboxItem)}
                   alt={lightboxItem.title}
-                  className="max-h-[60vh] sm:max-h-[75vh] object-contain rounded-lg"
+                  className="max-h-[60vh] sm:max-h-[75vh] object-contain rounded-lg shadow-2xl"
+                  onError={(e) => {
+                    const cat = (lightboxItem.category || '').toUpperCase();
+                    if (cat.includes('POSTER')) e.target.src = '/mockups/sample-poster.png';
+                    else if (cat.includes('AD') || cat.includes('CREATIVE')) e.target.src = '/mockups/sample-ad.png';
+                  }}
                 />
               )}
             </div>
